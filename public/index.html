@@ -99,6 +99,23 @@
  
 <div id="notification-container"></div>
 
+<!-- Member Add Modal -->
+<div id="memberModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Add Member</h3>
+        <div id="selectedMembers" class="selected-members"></div>
+        <div class="form-group">
+            <label for="modalInput" id="modalLabel">Username:</label>
+            <input type="text" id="modalInput" list="user-list" autocomplete="off" placeholder="Type username and press enter">
+            <datalist id="user-list"></datalist>
+        </div>
+        <div class="modal-buttons">
+            <button id="modalCancel" class="modal-cancel">Cancel</button>
+            <button id="modalConfirm" class="modal-confirm">Add</button>
+        </div>
+    </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="js/socket.js"></script>
 <script src="js/ui.js"></script>

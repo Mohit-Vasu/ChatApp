@@ -21,6 +21,13 @@ module.exports = (io, socket) => {
 
         const id = 'g_' + Date.now();
 
+        // Check for non-existent users first
+        const missingUsers = members.filter(m => !users[m]);
+        if (missingUsers.length > 0) {
+            socket.emit('error', `User(s) [${missingUsers.join(', ')}] do not exist. Please check usernames.`);
+            return;
+        }
+
         // Ensure creator is included in members
         if (!members.includes(user.username)) {
             members.push(user.username);
@@ -155,6 +162,12 @@ module.exports = (io, socket) => {
         // Only creator or Alpha can add members
         if (group.creator !== user.username && user.username !== 'Alpha') {
             socket.emit('error', 'Only the group creator can add members');
+            return;
+        }
+
+        // Check if user exists
+        if (!users[usernameToAdd]) {
+            socket.emit('error', 'User "' + usernameToAdd + '" does not exist');
             return;
         }
 

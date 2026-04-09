@@ -386,3 +386,121 @@ body {
     padding-left: 2px;
     user-select: none;
 }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 350px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: #075e54;
+    font-size: 20px;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.modal-content input:focus {
+    border-color: #25d366;
+    outline: none;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.modal-cancel {
+    background: #eee;
+    color: #666;
+}
+
+.modal-cancel:hover {
+    background: #ddd;
+}
+
+.modal-confirm {
+    background: #25d366;
+    color: white;
+}
+
+.modal-confirm:hover {
+    background: #1ebe57;
+    transform: translateY(-1px);
+}
+
+.selected-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.member-chip {
+    background: #e7f3ff;
+    color: #1877f2;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+}
+
+.member-chip .remove-chip {
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    color: #1877f2;
+    opacity: 0.7;
+}
+
+.member-chip .remove-chip:hover {
+    opacity: 1;
+}
+

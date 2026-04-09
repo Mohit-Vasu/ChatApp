@@ -48,6 +48,16 @@ function renderUsers(users) {
     const el = document.getElementById('users');
     el.innerHTML = '';
 
+    const datalist = document.getElementById('user-list');
+    if (datalist) {
+        datalist.innerHTML = '';
+        users.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.username;
+            datalist.appendChild(opt);
+        });
+    }
+
     if (users.length === 0) {
         el.innerHTML = '<div style="color: #888; font-size: 12px;">No users online</div>';
         return;
@@ -163,9 +173,27 @@ function renderGroups(groups) {
             addBtn.style.cursor = 'pointer';
             addBtn.onclick = (e) => {
                 e.stopPropagation();
-                const userToAdd = prompt('Enter username to add to "' + g.name + '"');
-                if (userToAdd && userToAdd.trim()) {
-                    socket.emit('add member', { groupId: id, usernameToAdd: userToAdd.trim() });
+                if (window.showModal) {
+                    window.showModal(
+                        'Add Members to "' + g.name + '"',
+                        'Search users and select:',
+                        'Add Members',
+                        (selectedUsers) => {
+                            if (Array.isArray(selectedUsers)) {
+                                selectedUsers.forEach(userToAdd => {
+                                    socket.emit('add member', { groupId: id, usernameToAdd: userToAdd });
+                                });
+                            } else if (selectedUsers && selectedUsers.trim()) {
+                                socket.emit('add member', { groupId: id, usernameToAdd: selectedUsers.trim() });
+                            }
+                        },
+                        true // Enable multi-select
+                    );
+                } else {
+                    const userToAdd = prompt('Enter username to add to "' + g.name + '"');
+                    if (userToAdd && userToAdd.trim()) {
+                        socket.emit('add member', { groupId: id, usernameToAdd: userToAdd.trim() });
+                    }
                 }
             };
             controls.appendChild(addBtn);

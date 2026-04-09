@@ -189,6 +189,41 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Error: ' + msg);
     });
 
+    socket.on('deleted', (msg) => {
+        alert(msg);
+        localStorage.removeItem('username');
+        localStorage.removeItem('password');
+        window.location.reload();
+    });
+
+    socket.on('group list updated', () => {
+        socket.emit('get groups');
+    });
+
+    socket.on('group deleted', (groupId) => {
+        if (current.type === 'group' && current.id === groupId) {
+            current = { type: null, id: null };
+            document.getElementById('chatTitle').textContent = 'Select a user or group';
+            document.getElementById('messages').innerHTML = '';
+            document.querySelector('.input-area').style.display = 'none';
+        }
+        socket.emit('get groups');
+    });
+
+    socket.on('user deleted', (deletedUsername) => {
+        // If current private chat was with this user, clear it
+        if (current.type === 'private' && current.id === deletedUsername) {
+            current = { type: null, id: null };
+            document.getElementById('chatTitle').textContent = 'Select a user or group';
+            document.getElementById('messages').innerHTML = '';
+            document.querySelector('.input-area').style.display = 'none';
+        }
+        
+        // Remove from local users list
+        users = users.filter(u => u.username !== deletedUsername);
+        renderUsers(users);
+    });
+
     socket.on('group list', renderGroups);
 
     socket.on('private history', messages => {
@@ -477,12 +512,122 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'private_' + [msg.from, msg.to].sort().join('-');
     }
 
+    // ✅ Modal Logic
+    const memberModal = document.getElementById('memberModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalLabel = document.getElementById('modalLabel');
+    const modalInput = document.getElementById('modalInput');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalCancel = document.getElementById('modalCancel');
+    const selectedMembersDiv = document.getElementById('selectedMembers');
+
+    let modalCallback = null;
+    let selectedMemberNames = new Set();
+    let isMultiSelect = false;
+
+    window.showModal = function(title, label, buttonText, callback, multi = false) {
+        modalTitle.textContent = title;
+        modalLabel.textContent = label;
+        modalInput.value = '';
+        modalConfirm.textContent = buttonText;
+        modalCallback = callback;
+        isMultiSelect = multi;
+        selectedMemberNames.clear();
+        selectedMembersDiv.innerHTML = '';
+        memberModal.style.display = 'flex';
+        modalInput.focus();
+    };
+
+    function addMemberChip(name) {
+        if (selectedMemberNames.has(name)) return;
+        selectedMemberNames.add(name);
+
+        const chip = document.createElement('div');
+        chip.className = 'member-chip';
+        chip.innerHTML = `
+            <span>${name}</span>
+            <span class="remove-chip">&times;</span>
+        `;
+        
+        chip.querySelector('.remove-chip').onclick = () => {
+            selectedMemberNames.delete(name);
+            chip.remove();
+        };
+
+        selectedMembersDiv.appendChild(chip);
+    }
+
+    modalInput.oninput = (e) => {
+        const name = modalInput.value.trim();
+        // Check if the input value matches an existing user exactly (from datalist)
+        const userExists = users.some(u => u.username === name);
+        if (userExists) {
+            if (isMultiSelect) {
+                addMemberChip(name);
+                modalInput.value = '';
+            }
+        }
+    };
+
+    modalInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            const name = modalInput.value.trim();
+            if (name) {
+                if (isMultiSelect) {
+                    addMemberChip(name);
+                    modalInput.value = '';
+                } else {
+                    modalConfirm.onclick();
+                }
+            }
+        }
+    };
+
+    modalCancel.onclick = () => {
+        memberModal.style.display = 'none';
+        modalCallback = null;
+    };
+
+    modalConfirm.onclick = () => {
+        if (isMultiSelect) {
+            if (modalCallback) {
+                modalCallback(Array.from(selectedMemberNames));
+            }
+        } else {
+            const val = modalInput.value.trim();
+            if (val && modalCallback) {
+                modalCallback(val);
+            }
+        }
+        memberModal.style.display = 'none';
+        modalCallback = null;
+    };
+
+    // Close modal on escape key
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && memberModal.style.display === 'flex') {
+            modalCancel.onclick();
+        }
+    });
+
     // ✅ CREATE GROUP
     window.createGroup = function () {
         const name = prompt('Group name');
-        const members = prompt('Enter usernames comma separated').split(',').map(s => s.trim());
+        if (!name) return;
 
-        socket.emit('create group', { name, members });
+        window.showModal(
+            'Add Initial Members',
+            'Search users and select:',
+            'Create Group',
+            (members) => {
+                if (members.length === 0) {
+                    alert('Please select at least one member');
+                    return;
+                }
+                socket.emit('create group', { name, members });
+            },
+            true // Enable multi-select
+        );
     };
 
     // ✅ DELETE GROUP
