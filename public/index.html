@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App</title>
+    <link rel="icon"  href="fevicon/android-chrome-512x512-removebg-preview.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app" style="display: none;">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2 style="display: flex; align-items: center;"><img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp" style="width: 45px; height: 40px; margin-right: 5px;"> ChatApp</h2>
+        <div id="currentUser" style="color: white; font-size: 12px; margin-bottom: 10px;"></div>
+        <button onclick="logout()" style="margin-bottom: 5px; padding: 5px 10px; cursor: pointer; width: 100%;">Logout</button>
+        <button onclick="changePassword()" style="margin-bottom: 15px; padding: 5px 10px; cursor: pointer; width: 100%;">Change Password</button>
+
+        <h4>👥 Users</h4>
+        <div id="users"></div>
+
+        <h4>👨‍👩‍👧 Groups</h4>
+        <div id="groups"></div>
+
+        <button onclick="createGroup()">+ Create Group</button>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat">
+        <div class="chat-header" id="chatTitle">Select a chat</div>
+
+        <div id="messages" class="messages"></div>
+
+        <div id="typingIndicator" class="typing-indicator"></div>
+
+        <div class="input-area">
+            <input id="msg" placeholder="Type message..." />
+            <button onclick="send()">➤</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Attractive Login Page -->
+<div id="loginPage" class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
+            <h1>Welcome to ChatApp</h1>
+            <p>Connect with friends and groups instantly</p>
+        </div>
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password">
+            </div>
+            <button type="submit" class="login-btn">Login / Join</button>
+        </form>
+         <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
+             Don't have an account?
+             <a href="#" id="openRegister" style="color:#128c7e;text-decoration:none;font-weight:600">Register</a>
+         </div>
+    </div>
+</div>
+
+ <!-- Register Page -->
+ <div id="registerPage" class="login-page" style="display:none">
+     <div class="login-container">
+         <div class="login-header">
+             <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
+             <h1>Create your account</h1>
+             <p>Please enter your details to register</p>
+         </div>
+         <form id="registerForm" class="login-form">
+             <div class="form-group">
+                 <label for="regUsername">Username</label>
+                 <input type="text" id="regUsername" placeholder="Choose a username" required>
+             </div>
+             <div class="form-group">
+                 <label for="regPassword">Password</label>
+                 <input type="password" id="regPassword" placeholder="Choose a password" required>
+             </div>
+             <div class="form-group">
+                 <label for="regConfirm">Confirm Password</label>
+                 <input type="password" id="regConfirm" placeholder="Re-enter password" required>
+             </div>
+             <button type="submit" class="login-btn">Register</button>
+         </form>
+         <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
+             Already have an account?
+             <a href="#" id="openLogin" style="color:#128c7e;text-decoration:none;font-weight:600">Login</a>
+         </div>
+     </div>
+ </div>
+ 
+<div id="notification-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/socket.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

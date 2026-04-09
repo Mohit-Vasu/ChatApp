@@ -1,0 +1,32 @@
+{
+  "Alpha": {
+    "username": "Alpha",
+    "password": "Alpha@123",
+    "socketId": "C8JmEbtGevDK0ni6AAAT",
+    "online": true
+  },
+  "Parthiv": {
+    "username": "Parthiv",
+    "password": "123",
+    "socketId": "TSx1fRrXO79EJYYCAAAl",
+    "online": true
+  },
+  "Beta": {
+    "username": "Beta",
+    "password": "123",
+    "socketId": "YUgghfQTVYKekTJJAAAd",
+    "online": true
+  },
+  "MS Dhoni": {
+    "username": "MS Dhoni",
+    "password": "7",
+    "socketId": "GrS7hBi84vtYkO4uAAAf",
+    "online": false
+  },
+  "bella": {
+    "username": "bella",
+    "password": "222",
+    "socketId": "b4M26nUMb3nU8e6gAAAj",
+    "online": true
+  }
+}
