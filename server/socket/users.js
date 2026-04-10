@@ -5,8 +5,16 @@ const usersFile = './users.json';
 let users = {};
 
 try {
-    users = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
-} catch (e) {}
+    const data = fs.readFileSync(usersFile, 'utf8');
+    if (data && data.trim()) {
+        users = JSON.parse(data);
+    } else {
+        users = {};
+    }
+} catch (e) {
+    console.error('Error loading users.json:', e);
+    users = {};
+}
 
 function saveUsers() {
     fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
@@ -73,52 +81,6 @@ module.exports = (io, socket) => {
             // Delete from users.json
             delete users[targetUsername];
             saveUsers();
-
-            // Permanent Delete related data from groups.json
-            const groupsFile = './groups.json';
-            try {
-                let groups = JSON.parse(fs.readFileSync(groupsFile, 'utf8'));
-                let groupsChanged = false;
-                Object.keys(groups).forEach(groupId => {
-                    const group = groups[groupId];
-                    // If the user is the creator, delete the whole group
-                    if (group.creator === targetUsername) {
-                        delete groups[groupId];
-                        groupsChanged = true;
-                        io.emit('group deleted', groupId);
-                    } else if (group.members.includes(targetUsername)) {
-                        // Otherwise, just remove them from the members list
-                        group.members = group.members.filter(m => m !== targetUsername);
-                        groupsChanged = true;
-                    }
-                });
-                if (groupsChanged) {
-                    fs.writeFileSync(groupsFile, JSON.stringify(groups, null, 2));
-                    // Notify everyone about group list update
-                    io.emit('group list updated'); 
-                }
-            } catch (e) {
-                console.error('Error updating groups.json:', e);
-            }
-
-            // Permanent Delete related data from private.json
-            const privateFile = './private.json';
-            try {
-                let privateChats = JSON.parse(fs.readFileSync(privateFile, 'utf8'));
-                let privateChanged = false;
-                Object.keys(privateChats).forEach(roomKey => {
-                    // Room keys are like 'private_user1-user2'
-                    if (roomKey.includes(`_${targetUsername}-`) || roomKey.endsWith(`-${targetUsername}`)) {
-                        delete privateChats[roomKey];
-                        privateChanged = true;
-                    }
-                });
-                if (privateChanged) {
-                    fs.writeFileSync(privateFile, JSON.stringify(privateChats, null, 2));
-                }
-            } catch (e) {
-                console.error('Error updating private.json:', e);
-            }
 
             // Notify everyone to refresh their data
             io.emit('user list', Object.values(users));

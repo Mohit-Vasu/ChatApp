@@ -6,8 +6,16 @@ const privateFile = './private.json';
 let privateChats = {};
 
 try {
-    privateChats = JSON.parse(fs.readFileSync(privateFile, 'utf8'));
-} catch (e) {}
+    const data = fs.readFileSync(privateFile, 'utf8');
+    if (data && data.trim()) {
+        privateChats = JSON.parse(data);
+    } else {
+        privateChats = {};
+    }
+} catch (e) {
+    console.error('Error loading private.json:', e);
+    privateChats = {};
+}
 
 function savePrivate() {
     fs.writeFileSync(privateFile, JSON.stringify(privateChats, null, 2));

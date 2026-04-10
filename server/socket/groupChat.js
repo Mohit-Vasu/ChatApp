@@ -6,8 +6,16 @@ const groupsFile = './groups.json';
 let groups = {};
 
 try {
-    groups = JSON.parse(fs.readFileSync(groupsFile, 'utf8'));
-} catch (e) {}
+    const data = fs.readFileSync(groupsFile, 'utf8');
+    if (data && data.trim()) {
+        groups = JSON.parse(data);
+    } else {
+        groups = {};
+    }
+} catch (e) {
+    console.error('Error loading groups.json:', e);
+    groups = {};
+}
 
 function saveGroups() {
     fs.writeFileSync(groupsFile, JSON.stringify(groups, null, 2));
