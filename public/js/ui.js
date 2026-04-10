@@ -150,7 +150,31 @@ function renderGroups(groups) {
         d.dataset.members = g.members ? g.members.join(',') : '';
         const memberCount = g.members ? g.members.length : 0;
         const notify = window.notifications[id] ? ` (${window.notifications[id]})` : '';
-        d.textContent = '👨‍👩‍👧 ' + g.name + ' (' + memberCount + ')' + notify;
+        
+        // Group Info Container
+        const groupInfo = document.createElement('div');
+        groupInfo.style.display = 'flex';
+        groupInfo.style.flexDirection = 'column';
+        groupInfo.style.flex = '1';
+
+        const nameLine = document.createElement('div');
+        nameLine.textContent = '👨‍👩‍👧 ' + g.name + ' (' + memberCount + ')' + notify;
+        nameLine.style.fontWeight = '600';
+
+        const membersLine = document.createElement('div');
+        membersLine.textContent = g.members ? g.members.join(', ') : '';
+        membersLine.style.fontSize = '11px';
+        membersLine.style.opacity = '0.7';
+        membersLine.style.whiteSpace = 'nowrap';
+        membersLine.style.overflow = 'hidden';
+        membersLine.style.textOverflow = 'ellipsis';
+        membersLine.style.maxWidth = '160px';
+        membersLine.style.marginTop = '2px';
+
+        groupInfo.appendChild(nameLine);
+        groupInfo.appendChild(membersLine);
+
+        d.appendChild(groupInfo);
         d.style.cursor = 'pointer';
         d.style.flex = '1';
         d.title = 'Members: ' + (g.members ? g.members.join(', ') : '');

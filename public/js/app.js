@@ -257,7 +257,20 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUsers(users);
     });
 
-    socket.on('group list', renderGroups);
+    socket.on('group list', (groups) => {
+        window.currentGroups = groups;
+        renderGroups(groups);
+        
+        // Refresh header if current chat is a group
+        if (current.type === 'group' && groups[current.id]) {
+            const g = groups[current.id];
+            const memberCount = g.members ? g.members.length : 0;
+            const membersList = g.members ? g.members.join(', ') : '';
+            const creatorInfo = g.creator ? ` | Admin: ${g.creator}` : '';
+            document.getElementById('chatTitle').textContent = g.name;
+            document.getElementById('chatStatus').textContent = memberCount + ' members: ' + membersList + creatorInfo;
+        }
+    });
 
     socket.on('private history', messages => {
         const key = 'private_' + [username, current.id].sort().join('-');
@@ -498,8 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show group info with member count
         const memberCount = members ? members.length : 0;
+        const membersList = members ? members.join(', ') : '';
+        const currentGroup = window.currentGroups && window.currentGroups[id];
+        const creatorInfo = currentGroup && currentGroup.creator ? ` | Admin: ${currentGroup.creator}` : '';
         document.getElementById('chatTitle').textContent = groupName;
-        document.getElementById('chatStatus').textContent = memberCount + ' members';
+        document.getElementById('chatStatus').textContent = memberCount + ' members: ' + membersList + creatorInfo;
 
         loadMessages();
         // Reset typing state on chat switch
