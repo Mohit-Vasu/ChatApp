@@ -133,7 +133,24 @@ document.addEventListener('DOMContentLoaded', () => {
         window.username = username;
         localStorage.setItem('username', username);
         localStorage.setItem('password', password || ''); // Save password for auto-login
-        document.getElementById('currentUser').textContent = 'Logged in as: ' + username;
+        
+        // Update both sidebar (if still used) and top-nav username
+        const userDisplay = document.getElementById('currentUser');
+        if (userDisplay) userDisplay.textContent = 'Logged in as: ' + username;
+        
+        const userNavDisplay = document.getElementById('currentUserNav');
+        if (userNavDisplay) userNavDisplay.textContent = username;
+        
+        const userAvatar = document.getElementById('userAvatar');
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerName = document.getElementById('headerName');
+
+        if (username) {
+            const initial = username.charAt(0).toUpperCase();
+            if (userAvatar) userAvatar.textContent = initial;
+            if (headerAvatar) headerAvatar.textContent = initial;
+            if (headerName) headerName.textContent = username;
+        }
         
         // Hide login page, show app
         document.getElementById('loginPage').style.display = 'none';
@@ -146,6 +163,24 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUsers(users);
         renderGroups(window.currentGroups || {});
     });
+
+    // Dropdown logic
+    const userProfile = document.getElementById('userProfile');
+    const profileDropdown = document.getElementById('profileDropdown');
+
+    if (userProfile && profileDropdown) {
+        userProfile.onclick = (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('active');
+            userProfile.classList.toggle('active');
+        };
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', () => {
+            profileDropdown.classList.remove('active');
+            userProfile.classList.remove('active');
+        });
+    }
 
     socket.on('auth failed', (msg) => {
         if ((msg || '').toLowerCase().includes('not exist')) {
@@ -203,9 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('group deleted', (groupId) => {
         if (current.type === 'group' && current.id === groupId) {
             current = { type: null, id: null };
-            document.getElementById('chatTitle').textContent = 'Select a user or group';
+            toggleChat(false);
             document.getElementById('messages').innerHTML = '';
-            document.querySelector('.input-area').style.display = 'none';
         }
         socket.emit('get groups');
     });
@@ -214,9 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // If current private chat was with this user, clear it
         if (current.type === 'private' && current.id === deletedUsername) {
             current = { type: null, id: null };
-            document.getElementById('chatTitle').textContent = 'Select a user or group';
+            toggleChat(false);
             document.getElementById('messages').innerHTML = '';
-            document.querySelector('.input-area').style.display = 'none';
         }
         
         // Remove from local users list
@@ -417,14 +450,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function toggleChat(show) {
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const chatContent = document.getElementById('chatContent');
+        if (show) {
+            welcomeScreen.style.display = 'none';
+            chatContent.style.display = 'flex';
+        } else {
+            welcomeScreen.style.display = 'flex';
+            chatContent.style.display = 'none';
+        }
+    }
+
     // ✅ SELECT PRIVATE
     window.selectPrivate = function (id) {
         current = { type: 'private', id };
+        toggleChat(true);
 
         socket.emit('join private', id);
 
         window.notifications[id] = 0;
         saveNotifications();
+
+        // Update Header
+        const targetUser = users.find(u => u.username === id);
+        const status = targetUser?.online ? 'Online' : 'Offline';
+        document.getElementById('chatTitle').textContent = id;
+        document.getElementById('chatStatus').textContent = status;
 
         loadMessages();
         renderUsers(users);
@@ -436,6 +488,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ✅ SELECT GROUP
     window.selectGroup = function (id, groupName, members) {
         current = { type: 'group', id };
+        toggleChat(true);
+
         socket.emit('join group', id); // Join the group socket room
 
         window.notifications[id] = 0; // Clear notifications for this group
@@ -444,8 +498,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show group info with member count
         const memberCount = members ? members.length : 0;
-        const memberList = members ? members.join(', ') : '';
-        document.getElementById('chatTitle').textContent = groupName + ' (' + memberCount + ' members: ' + memberList + ')';
+        document.getElementById('chatTitle').textContent = groupName;
+        document.getElementById('chatStatus').textContent = memberCount + ' members';
 
         loadMessages();
         // Reset typing state on chat switch
@@ -651,26 +705,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ✅ LOGOUT - only clears password on explicit logout
     window.logout = function () {
-        localStorage.removeItem('username');
-        localStorage.removeItem('password'); // Clear password on logout
-        localStorage.removeItem('chatHistory');
-        location.reload();
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('username');
+            localStorage.removeItem('password');
+            window.location.reload();
+        }
     };
 
-    // ✅ CHANGE PASSWORD
     window.changePassword = function () {
-        const currentPass = prompt('Enter your current password');
-        if (currentPass === null) return; // Cancelled
-
-        const newPass = prompt('Enter your new password');
-        if (newPass === null) return; // Cancelled
-
-        socket.emit('change password', {
-            currentPassword: currentPass || '',
-            newPassword: newPass || ''
-        });
+        const currentPassword = prompt('Enter current password:');
+        if (!currentPassword) return;
+        const newPassword = prompt('Enter new password:');
+        if (!newPassword) return;
+        socket.emit('change password', { currentPassword, newPassword });
     };
 
     // Handle password change response

@@ -77,6 +77,7 @@ function renderUsers(users) {
         d.className = 'user';
 
         const isMe = u.username === currentUser;
+        const isActive = window.current && window.current.type === 'private' && window.current.id === u.username;
         const status = u.online ? '🟢' : '🔴';
         const notify = window.notifications[u.username] ? ` (${window.notifications[u.username]})` : '';
         const meLabel = isMe ? ' (me)' : '';
@@ -85,6 +86,8 @@ function renderUsers(users) {
         d.style.display = 'flex';
         d.style.justifyContent = 'space-between';
         d.style.alignItems = 'center';
+
+        if (isActive) d.classList.add('active');
 
         if (!isMe) {
             d.style.cursor = 'pointer';
@@ -131,13 +134,15 @@ function renderGroups(groups) {
     sortedGroups.forEach(([id, g]) => {
         const container = document.createElement('div');
         container.className = 'group-container';
+        const isActive = window.current && window.current.type === 'group' && window.current.id === id;
+        if (isActive) container.classList.add('active');
+        
         container.style.display = 'flex';
         container.style.justifyContent = 'space-between';
         container.style.alignItems = 'center';
-        container.style.padding = '5px';
+        container.style.padding = '12px';
         container.style.marginBottom = '5px';
-        container.style.background = '#34495e';
-        container.style.borderRadius = '4px';
+        container.style.borderRadius = '10px';
 
         const d = document.createElement('div');
         d.className = 'group';
@@ -158,7 +163,7 @@ function renderGroups(groups) {
         const currentUser = window.username;
         const controls = document.createElement('div');
         controls.style.display = 'flex';
-        controls.style.gap = '5px';
+        controls.style.gap = '8px';
 
         // Add member button (only for creator or Alpha)
         if (g.creator === currentUser || currentUser === 'Alpha') {
@@ -168,9 +173,14 @@ function renderGroups(groups) {
             addBtn.style.background = '#25d366';
             addBtn.style.color = 'white';
             addBtn.style.border = 'none';
-            addBtn.style.borderRadius = '3px';
-            addBtn.style.padding = '2px 6px';
+            addBtn.style.borderRadius = '50%';
+            addBtn.style.width = '24px';
+            addBtn.style.height = '24px';
             addBtn.style.cursor = 'pointer';
+            addBtn.style.display = 'flex';
+            addBtn.style.justifyContent = 'center';
+            addBtn.style.alignItems = 'center';
+            addBtn.style.fontSize = '14px';
             addBtn.onclick = (e) => {
                 e.stopPropagation();
                 if (window.showModal) {
@@ -199,20 +209,26 @@ function renderGroups(groups) {
             controls.appendChild(addBtn);
         }
 
+        // Delete group button (only for Alpha)
         if (currentUser === 'Alpha') {
             const delBtn = document.createElement('button');
-            delBtn.textContent = '×';
+            delBtn.textContent = '✕';
             delBtn.title = 'Delete Group';
-            delBtn.style.background = '#e74c3c';
+            delBtn.style.background = '#ff4444';
             delBtn.style.color = 'white';
             delBtn.style.border = 'none';
-            delBtn.style.borderRadius = '3px';
-            delBtn.style.padding = '2px 6px';
+            delBtn.style.borderRadius = '50%';
+            delBtn.style.width = '24px';
+            delBtn.style.height = '24px';
             delBtn.style.cursor = 'pointer';
+            delBtn.style.display = 'flex';
+            delBtn.style.justifyContent = 'center';
+            delBtn.style.alignItems = 'center';
+            delBtn.style.fontSize = '12px';
             delBtn.onclick = (e) => {
                 e.stopPropagation();
                 if (confirm('Delete group "' + g.name + '"?')) {
-                    deleteGroup(id);
+                    socket.emit('delete group', id);
                 }
             };
             controls.appendChild(delBtn);

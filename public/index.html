@@ -12,9 +12,6 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <h2 style="display: flex; align-items: center;"><img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp" style="width: 45px; height: 40px; margin-right: 5px;"> ChatApp</h2>
-        <div id="currentUser" style="color: white; font-size: 12px; margin-bottom: 10px;"></div>
-        <button onclick="logout()" style="margin-bottom: 5px; padding: 5px 10px; cursor: pointer; width: 100%;">Logout</button>
-        <button onclick="changePassword()" style="margin-bottom: 15px; padding: 5px 10px; cursor: pointer; width: 100%;">Change Password</button>
 
         <h4>👥 Users</h4>
         <div id="users"></div>
@@ -22,20 +19,72 @@
         <h4>👨‍👩‍👧 Groups</h4>
         <div id="groups"></div>
 
-        <button onclick="createGroup()">+ Create Group</button>
+        <button onclick="createGroup()" class="sidebar-btn create-group-btn">
+            <span>+</span> Create New Group
+        </button>
     </div>
 
     <!-- Chat -->
     <div class="chat">
-        <div class="chat-header" id="chatTitle">Select a chat</div>
+        <!-- Top Navigation / User Profile Header -->
+        <div class="top-nav">
+            <div class="user-profile" id="userProfile">
+                <div class="user-info-toggle">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <span id="currentUserNav">User</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-header">
+                        <div class="header-avatar" id="headerAvatar">U</div>
+                        <div class="header-info">
+                            <span id="headerName">User</span>
+                            <span class="status-text">Online</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-item" onclick="changePassword()">
+                        <span class="item-icon">🔑</span> 
+                        <span class="item-label">Change Password</span>
+                    </div>
+                    <div class="dropdown-item logout" onclick="logout()">
+                        <span class="item-icon">🚪</span> 
+                        <span class="item-label">Logout</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <div id="messages" class="messages"></div>
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <div class="welcome-content">
+                <div class="welcome-icon">
+                    <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp">
+                </div>
+                <h2>Welcome to ChatApp Live</h2>
+                <p>Select a friend or join a group to start messaging instantly.</p>
+                <div class="live-status-badge">
+                    <span class="pulse"></span> Live Connection Active
+                </div>
+            </div>
+        </div>
 
-        <div id="typingIndicator" class="typing-indicator"></div>
+        <!-- Chat Content (Hidden by default) -->
+        <div id="chatContent" style="display: none; flex-direction: column; flex: 1;">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div id="chatTitle" class="chat-title">Select a chat</div>
+                    <div id="chatStatus" class="chat-status"></div>
+                </div>
+            </div>
 
-        <div class="input-area">
-            <input id="msg" placeholder="Type message..." />
-            <button onclick="send()">➤</button>
+            <div id="messages" class="messages"></div>
+
+            <div id="typingIndicator" class="typing-indicator"></div>
+
+            <div class="input-area">
+                <input id="msg" placeholder="Type message..." />
+                <button onclick="send()">➤</button>
+            </div>
         </div>
     </div>
 
