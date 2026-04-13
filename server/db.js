@@ -36,7 +36,12 @@ const groupSchema = new mongoose.Schema({
         from: String,
         groupId: String,
         groupName: String,
-        time: String
+        time: String,
+        fileUrl: String,
+        fileName: String,
+        fileType: String,
+        filePublicId: String,
+        fileResourceType: String
     }]
 });
 
@@ -47,7 +52,12 @@ const privateChatSchema = new mongoose.Schema({
         username: String,
         from: String,
         to: String,
-        time: String
+        time: String,
+        fileUrl: String,
+        fileName: String,
+        fileType: String,
+        filePublicId: String,
+        fileResourceType: String
     }]
 });
 
@@ -55,4 +65,21 @@ const User = mongoose.model('User', userSchema);
 const Group = mongoose.model('Group', groupSchema);
 const PrivateChat = mongoose.model('PrivateChat', privateChatSchema);
 
-module.exports = { connectDB, User, Group, PrivateChat };
+const pendingDeletionSchema = new mongoose.Schema(
+    {
+        publicId: { type: String, required: true },
+        resourceType: { type: String, required: true },
+        deleteAt: { type: Date, required: true },
+        deleted: { type: Boolean, default: false },
+        deletedAt: { type: Date, default: null },
+        lastError: { type: String, default: '' }
+    },
+    { timestamps: true }
+);
+
+pendingDeletionSchema.index({ publicId: 1, resourceType: 1 }, { unique: true });
+pendingDeletionSchema.index({ deleted: 1, deleteAt: 1 });
+
+const PendingDeletion = mongoose.model('PendingDeletion', pendingDeletionSchema);
+
+module.exports = { connectDB, User, Group, PrivateChat, PendingDeletion };

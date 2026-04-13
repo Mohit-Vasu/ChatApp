@@ -10,13 +10,45 @@ function addMessage(msg, isMe = false) {
     header.textContent = isMe ? 'You' : (msg.username || 'User');
     
     const content = document.createElement('div');
-    content.textContent = msg.text;
+    content.className = 'message-content';
+    if (msg.text) {
+        content.textContent = msg.text;
+    }
 
     div.appendChild(header);
     div.appendChild(content);
 
-    // Add click-to-copy functionality
+    // If there is a file attached
+    if (msg.fileUrl) {
+        const fileContainer = document.createElement('div');
+        fileContainer.className = 'file-message';
+        
+        if (msg.fileType === 'image') {
+            const img = document.createElement('img');
+            img.src = msg.fileUrl;
+            img.alt = msg.fileName || 'Image';
+            img.onclick = (e) => {
+                e.stopPropagation();
+                window.open(msg.fileUrl, '_blank');
+            };
+            img.onload = () => {
+                messages.scrollTop = messages.scrollHeight;
+            };
+            fileContainer.appendChild(img);
+        } else {
+            const link = document.createElement('a');
+            link.href = msg.fileUrl;
+            link.target = '_blank';
+            link.innerHTML = `<span class="file-icon">📄</span> <span class="file-name">${msg.fileName || 'Document'}</span>`;
+            link.onclick = (e) => e.stopPropagation();
+            fileContainer.appendChild(link);
+        }
+        
+        div.appendChild(fileContainer);
+    }
+
     div.onclick = () => {
+        if (!msg.text) return;
         navigator.clipboard.writeText(msg.text).then(() => {
             div.classList.add('copied');
 

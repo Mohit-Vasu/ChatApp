@@ -19,7 +19,7 @@ body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     z-index: 20;
 }
 
@@ -39,17 +39,19 @@ body {
     opacity: 0.8;
 }
 
-#users, #groups {
+#users,
+#groups {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     margin-bottom: 10px;
 }
 
-.user, .group-container {
+.user,
+.group-container {
     padding: 12px 15px;
     margin: 5px 0;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -59,15 +61,17 @@ body {
     border-left: 3px solid transparent;
 }
 
-.user:hover, .group-container:hover {
-    background: rgba(255,255,255,0.15);
+.user:hover,
+.group-container:hover {
+    background: rgba(255, 255, 255, 0.15);
     transform: translateX(5px);
 }
 
-.user.active, .group-container.active {
-    background: rgba(255,255,255,0.2);
+.user.active,
+.group-container.active {
+    background: rgba(255, 255, 255, 0.2);
     border-left: 4px solid #25d366;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-btn {
@@ -94,12 +98,14 @@ body {
     box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
 }
 
+
+
 /* Chat Area Styling */
 .chat {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fdfdfd;
+    /* background: transparent; */
     position: relative;
     overflow: hidden;
 }
@@ -112,7 +118,7 @@ body {
     justify-content: flex-end;
     align-items: center;
     padding: 0 30px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 100;
     position: relative;
 }
@@ -143,7 +149,7 @@ body {
 .user-profile.active .user-info-toggle {
     background: white;
     color: #075e54;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .dropdown-arrow {
@@ -173,9 +179,17 @@ body {
 }
 
 @keyframes avatarPulseLive {
-    0% { box-shadow: 0 0 0 0px rgba(37, 211, 102, 0.5); }
-    70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
-    100% { box-shadow: 0 0 0 0px rgba(37, 211, 102, 0); }
+    0% {
+        box-shadow: 0 0 0 0px rgba(37, 211, 102, 0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0px rgba(37, 211, 102, 0);
+    }
 }
 
 .profile-dropdown {
@@ -185,7 +199,7 @@ body {
     width: 260px;
     background: white;
     border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     display: none;
     flex-direction: column;
     overflow: hidden;
@@ -199,8 +213,15 @@ body {
 }
 
 @keyframes dropdownPop {
-    from { opacity: 0; transform: scale(0.5) translateY(-20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+    from {
+        opacity: 0;
+        transform: scale(0.5) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .dropdown-header {
@@ -287,8 +308,15 @@ body {
 }
 
 @keyframes welcomeEntrance {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .welcome-icon img {
@@ -298,8 +326,15 @@ body {
 }
 
 @keyframes iconFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
 }
 
 .live-status-badge {
@@ -311,8 +346,12 @@ body {
     border-radius: 30px;
     color: #25d366;
     font-weight: 700;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
     margin-top: 20px;
+}
+
+::-webkit-scrollbar {
+    width: 0px !important;
 }
 
 /* Chat Content Styling */
@@ -320,7 +359,11 @@ body {
     padding: 15px 25px;
     background: #064e46;
     color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#chatContent {
+    overflow-y: auto;
 }
 
 .chat-title {
@@ -346,15 +389,23 @@ body {
 .messages::before {
     content: "";
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-    opacity: 0.06;
-    animation: backgroundScroll 60s linear infinite;
+    opacity: 1;
+    /* animation: backgroundScroll 60s linear infinite; */
 }
 
 @keyframes backgroundScroll {
-    from { background-position: 0 0; }
-    to { background-position: 1000px 1000px; }
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 1000px 1000px;
+    }
 }
 
 .message {
@@ -364,13 +415,20 @@ body {
     border-radius: 12px;
     position: relative;
     z-index: 2;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     animation: messagePop 0.3s ease-out;
 }
 
 @keyframes messagePop {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .message.sent {
@@ -383,11 +441,22 @@ body {
     align-self: flex-start;
 }
 
+.message.received div,
+.message.sent div {
+    word-wrap: break-word;
+}
+
 .message-header {
     font-weight: 700;
     font-size: 12px;
     margin-bottom: 4px;
     display: block;
+}
+
+.message-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .input-area {
@@ -398,13 +467,20 @@ body {
     gap: 15px;
 }
 
-.input-area input {
+.input-area #msg {
     flex: 1;
     padding: 12px 20px;
     border-radius: 25px;
     border: 1px solid #ddd;
     outline: none;
     font-size: 15px;
+    line-height: 1.3;
+    resize: none;
+    overflow-y: auto;
+    /* min-height: 45px;
+    max-height: 120px; */
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .input-area button {
@@ -423,12 +499,66 @@ body {
     transform: scale(1.1) rotate(10deg);
 }
 
+.attach-btn {
+    background: #f0f2f5 !important;
+    color: #54656f !important;
+    padding: 0.8rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+}
+
+.attach-btn:hover {
+    background: #e2e8f0 !important;
+}
+
+.file-message {
+    margin-top: 5px;
+    max-width: 100%;
+}
+
+.file-message img {
+    width: 100%;
+    max-width: 320px;
+    max-height: 240px;
+    height: auto;
+    object-fit: cover;
+    display: block;
+    border-radius: 8px;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+.file-message a {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    font-weight: 500;
+}
+
+.file-message a:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.file-icon {
+    margin-right: 8px;
+    font-size: 1.5em;
+}
+
 /* Modals & Notifications */
 .modal {
     display: none;
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(5px);
     z-index: 10000;
     justify-content: center;
@@ -520,14 +650,24 @@ body {
 }
 
 @keyframes modalSlide {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 /* Login Page Styling */
 .login-page {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
     display: flex;
     justify-content: center;
@@ -541,7 +681,7 @@ body {
     border-radius: 25px;
     width: 380px;
     text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
 .login-header img {

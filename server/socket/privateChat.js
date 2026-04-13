@@ -23,13 +23,18 @@ function getRoomKey(user1, user2) {
 
 module.exports = (io, socket) => {
 
-    socket.on('private message', async ({ to, text }) => {
+    socket.on('private message', async ({ to, text, fileUrl, fileName, fileType, filePublicId, fileResourceType }) => {
         try {
             const fromUser = await User.findOne({ socketId: socket.id });
             if (!fromUser) return;
 
             const message = {
                 text,
+                fileUrl,
+                fileName,
+                fileType,
+                filePublicId,
+                fileResourceType,
                 username: fromUser.username,
                 from: fromUser.username,
                 to,
@@ -37,17 +42,15 @@ module.exports = (io, socket) => {
             };
 
             const roomKey = getRoomKey(fromUser.username, to);
-            
-            let chat = await PrivateChat.findOne({ roomKey });
-            if (!chat) {
-                chat = new PrivateChat({ roomKey, messages: [] });
-            }
-            
-            chat.messages.push(message);
-            await chat.save();
+            const chat = await PrivateChat.findOneAndUpdate(
+                { roomKey },
+                { $setOnInsert: { roomKey }, $push: { messages: message } },
+                { upsert: true, returnDocument: 'after' }
+            );
 
-            // Update memory cache
-            privateChats[roomKey] = chat.messages;
+            if (chat?.messages) {
+                privateChats[roomKey] = chat.messages;
+            }
 
             const targetUser = await User.findOne({ username: to });
             if (targetUser?.online && targetUser.socketId) {

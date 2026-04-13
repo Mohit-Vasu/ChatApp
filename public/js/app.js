@@ -332,9 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
             window.notifications[msg.from] = (window.notifications[msg.from] || 0) + 1;
             saveNotifications();
             renderUsers(users);
+            const notifBody = msg.text || (msg.fileType === 'image' ? '[Image attached]' : (msg.fileUrl ? '[File attached]' : 'New message'));
             showNotification(
                 'New message from ' + msg.from,
-                msg.text,
+                notifBody,
                 () => {
                     window.notifications[msg.from] = 0;
                     saveNotifications();
@@ -369,9 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
             saveNotifications();
             renderGroups(window.currentGroups || {}); // Refresh to show badge
 
+            const notifBody = msg.text ? (msg.username + ': ' + msg.text) : (msg.username + ': ' + (msg.fileType === 'image' ? '[Image attached]' : '[File attached]'));
             showNotification(
                 'New message in ' + msg.groupName,
-                msg.username + ': ' + msg.text,
+                notifBody,
                 () => {
                     window.notifications[msg.groupId] = 0; // Clear notification on click
                     saveNotifications();
@@ -395,6 +397,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const input = document.getElementById('msg');
 
+    function resizeMessageBox() {
+        if (!input) return;
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    }
+
     input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -404,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Emit typing events while user types
     input.addEventListener('input', () => {
+        // resizeMessageBox();
         if (!current.type || !current.id) return;
         if (!typingState.active) {
             typingState.active = true;
@@ -524,24 +533,100 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ✅ SEND
-    window.send = function () {
-        const text = input.value.trim();
-        if (!text) return;
+    window.send = async function (fileData = null, textOverride = null) {
+        let text = textOverride !== null ? String(textOverride).trim() : input.value.trim();
+        
+        // If there's no text and no file, do nothing
+        if (!text && !fileData) return;
 
         if (!current.type) {
             alert('Select chat first');
             return;
         }
 
+        const payload = { text };
+        if (fileData) {
+            payload.fileUrl = fileData.url;
+            payload.fileType = fileData.fileType;
+            payload.fileName = fileData.fileName;
+            if (fileData.publicId) payload.filePublicId = fileData.publicId;
+            if (fileData.resourceType) payload.fileResourceType = fileData.resourceType;
+        }
+
         if (current.type === 'private') {
-            socket.emit('private message', { to: current.id, text });
+            payload.to = current.id;
+            socket.emit('private message', payload);
         } else {
-            socket.emit('group message', { groupId: current.id, text });
+            payload.groupId = current.id;
+            socket.emit('group message', payload);
         }
 
         input.value = '';
         stopTyping();
     };
+
+    // ✅ FILE UPLOAD
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
+
+            if (files.length > 10) {
+                alert('You can upload max 10 files at once.');
+                fileInput.value = '';
+                return;
+            }
+
+            const tooLarge = files.find(f => f.size > 10 * 1024 * 1024);
+            if (tooLarge) {
+                alert('File is too large. Max limit is 10MB.');
+                fileInput.value = '';
+                return;
+            }
+
+            if (!current.type) {
+                alert('Select chat first');
+                fileInput.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+
+            // Show uploading indicator (simple approach)
+            const btn = document.querySelector('.attach-btn');
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '⏳';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Upload failed');
+                }
+
+                const uploadedFiles = Array.isArray(result.files) ? result.files : [result];
+                const typedText = input.value.trim();
+                uploadedFiles.forEach((fileData, idx) => {
+                    window.send(fileData, idx === 0 ? typedText : '');
+                });
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('File upload failed: ' + error.message);
+            } finally {
+                btn.innerHTML = originalIcon;
+                btn.disabled = false;
+                fileInput.value = ''; // Reset input
+            }
+        });
+    }
 
     // ✅ STORAGE
     function saveMessage(roomKey, msg) {

@@ -94,7 +94,7 @@ module.exports = (io, socket) => {
         }
     });
 
-    socket.on('group message', async ({ groupId, text }) => {
+    socket.on('group message', async ({ groupId, text, fileUrl, fileName, fileType, filePublicId, fileResourceType }) => {
         try {
             const user = await User.findOne({ socketId: socket.id });
             if (!user) return;
@@ -111,6 +111,11 @@ module.exports = (io, socket) => {
             const groupName = group.name || 'Unknown Group';
             const message = {
                 text,
+                fileUrl,
+                fileName,
+                fileType,
+                filePublicId,
+                fileResourceType,
                 username: user.username,
                 from: user.username,
                 groupId,

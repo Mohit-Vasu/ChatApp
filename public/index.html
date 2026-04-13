@@ -82,7 +82,9 @@
             <div id="typingIndicator" class="typing-indicator"></div>
 
             <div class="input-area">
-                <input id="msg" placeholder="Type message..." />
+                <input type="file" id="fileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt" multiple />
+                <button onclick="document.getElementById('fileInput').click()" class="attach-btn" title="Attach File">📎</button>
+                <textarea id="msg" rows="1" placeholder="Type message..."></textarea>
                 <button onclick="send()">➤</button>
             </div>
         </div>
