@@ -2,6 +2,9 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const { connectDB } = require('./db');
+
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
@@ -12,6 +15,9 @@ const io = new Server(server, {
     },
     transports: ['websocket', 'polling']
 });
+
+// Connect to MongoDB
+connectDB();
 
 app.use(express.static(path.join(__dirname, '../public')));
 

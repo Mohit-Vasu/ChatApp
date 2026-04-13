@@ -1,25 +1,21 @@
-const fs = require('fs');
-const { users } = require('./users');
-
-const privateFile = './private.json';
+const { PrivateChat, User } = require('../db');
 
 let privateChats = {};
 
-try {
-    const data = fs.readFileSync(privateFile, 'utf8');
-    if (data && data.trim()) {
-        privateChats = JSON.parse(data);
-    } else {
-        privateChats = {};
+// Load private chats from MongoDB into memory for legacy support
+async function initPrivate() {
+    try {
+        const dbChats = await PrivateChat.find({});
+        dbChats.forEach(c => {
+            privateChats[c.roomKey] = c.messages;
+        });
+        console.log('Private chats initialized from MongoDB');
+    } catch (e) {
+        console.error('Error loading private chats from MongoDB:', e);
     }
-} catch (e) {
-    console.error('Error loading private.json:', e);
-    privateChats = {};
 }
 
-function savePrivate() {
-    fs.writeFileSync(privateFile, JSON.stringify(privateChats, null, 2));
-}
+initPrivate();
 
 function getRoomKey(user1, user2) {
     return 'private_' + [user1, user2].sort().join('-');
@@ -27,48 +23,71 @@ function getRoomKey(user1, user2) {
 
 module.exports = (io, socket) => {
 
-    socket.on('private message', ({ to, text }) => {
-        const fromUser = Object.values(users).find(u => u.socketId === socket.id);
-        if (!fromUser) return;
+    socket.on('private message', async ({ to, text }) => {
+        try {
+            const fromUser = await User.findOne({ socketId: socket.id });
+            if (!fromUser) return;
 
-        const message = {
-            text,
-            username: fromUser?.username,
-            from: fromUser?.username,
-            to,
-            time: new Date().toLocaleTimeString()
-        };
-
-        const roomKey = getRoomKey(fromUser.username, to);
-        if (!privateChats[roomKey]) privateChats[roomKey] = [];
-        privateChats[roomKey].push(message);
-        savePrivate();
-
-        const toSocket = users[to]?.socketId;
-        if (users[to]?.online && toSocket) io.to(toSocket).emit('private message', message);
-        socket.emit('private message', message);
-    });
-
-    // Typing indicator for private chat
-    socket.on('typing private', ({ to, isTyping }) => {
-        const fromUser = Object.values(users).find(u => u.socketId === socket.id);
-        if (!fromUser) return;
-
-        const toSocket = users[to]?.socketId;
-        if (users[to]?.online && toSocket) {
-            io.to(toSocket).emit('typing private', {
+            const message = {
+                text,
+                username: fromUser.username,
                 from: fromUser.username,
                 to,
-                isTyping: !!isTyping
-            });
+                time: new Date().toLocaleTimeString()
+            };
+
+            const roomKey = getRoomKey(fromUser.username, to);
+            
+            let chat = await PrivateChat.findOne({ roomKey });
+            if (!chat) {
+                chat = new PrivateChat({ roomKey, messages: [] });
+            }
+            
+            chat.messages.push(message);
+            await chat.save();
+
+            // Update memory cache
+            privateChats[roomKey] = chat.messages;
+
+            const targetUser = await User.findOne({ username: to });
+            if (targetUser?.online && targetUser.socketId) {
+                io.to(targetUser.socketId).emit('private message', message);
+            }
+            socket.emit('private message', message);
+        } catch (e) {
+            console.error('Private message error:', e);
         }
     });
 
-    socket.on('join private', (toUsername) => {
-        const fromUser = Object.values(users).find(u => u.socketId === socket.id);
-        if (!fromUser) return;
+    // Typing indicator for private chat
+    socket.on('typing private', async ({ to, isTyping }) => {
+        try {
+            const fromUser = await User.findOne({ socketId: socket.id });
+            if (!fromUser) return;
 
-        const roomKey = getRoomKey(fromUser.username, toUsername);
-        socket.emit('private history', privateChats[roomKey] || []);
+            const targetUser = await User.findOne({ username: to });
+            if (targetUser?.online && targetUser.socketId) {
+                io.to(targetUser.socketId).emit('typing private', {
+                    from: fromUser.username,
+                    to,
+                    isTyping: !!isTyping
+                });
+            }
+        } catch (e) {
+            console.error('Typing private error:', e);
+        }
+    });
+
+    socket.on('join private', async (toUsername) => {
+        try {
+            const fromUser = await User.findOne({ socketId: socket.id });
+            if (!fromUser) return;
+
+            const roomKey = getRoomKey(fromUser.username, toUsername);
+            const chat = await PrivateChat.findOne({ roomKey });
+            socket.emit('private history', chat ? chat.messages : []);
+        } catch (e) {
+            console.error('Join private error:', e);
+        }
     });
 };
