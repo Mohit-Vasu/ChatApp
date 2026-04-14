@@ -14,7 +14,7 @@ body {
 /* Sidebar Styling */
 .sidebar {
     width: 300px;
-    background: #075e54;
+    background: #103732;
     color: white;
     padding: 20px;
     display: flex;
@@ -113,7 +113,7 @@ body {
 /* Top Nav / User Profile Dropdown */
 .top-nav {
     height: 70px;
-    background: #075e54;
+    background: #103732;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -295,7 +295,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(138deg, #86cfc75c 0%, #29333f61 100%);
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -357,7 +357,7 @@ body {
 /* Chat Content Styling */
 .chat-header {
     padding: 15px 25px;
-    background: #064e46;
+    background: #327b73;
     color: white;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
@@ -382,7 +382,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    background: #e5ddd5;
+    background: #292826;
     position: relative;
 }
 
@@ -393,8 +393,8 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-    opacity: 1;
+    background-image: url('https://camo.githubusercontent.com/c42c83df2fd1e442ef1e0ed69cc20d21f65308fc2f0dca2a8035360738d49c8c/68747470733a2f2f7765622e77686174736170702e636f6d2f696d672f62672d636861742d74696c652d6461726b5f61346265353132653731393562366237333364393131306234303866303735642e706e67');
+    opacity: 0.2;
     /* animation: backgroundScroll 60s linear infinite; */
 }
 
