@@ -2,7 +2,7 @@ function addMessage(msg, isMe = false) {
     const messages = document.getElementById('messages');
 
     const div = document.createElement('div');
-    div.className = `message ${isMe ? 'sent' : 'received'}`;
+    div.className = `message ${isMe ? 'sent' : 'received'} ${msg.isAi ? 'ai-message' : ''}`;
     div.title = 'Click to copy message text';
     
     const header = document.createElement('span');

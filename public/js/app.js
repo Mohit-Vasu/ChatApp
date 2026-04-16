@@ -848,4 +848,97 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTypingIndicator('');
     });
 
+    // ✅ AI Sidebar Logic
+    const aiSidebar = document.getElementById('aiSidebar');
+    const aiToggleBtn = document.getElementById('aiToggleBtn');
+    const closeAiSidebar = document.getElementById('closeAiSidebar');
+    const aiMsgInput = document.getElementById('aiMsgInput');
+    const sendAiBtn = document.getElementById('sendAiBtn');
+    const aiMessages = document.getElementById('aiMessages');
+
+    aiToggleBtn.addEventListener('click', () => {
+        aiSidebar.classList.toggle('open');
+        if (aiSidebar.classList.contains('open')) {
+            aiMsgInput.focus();
+        }
+    });
+
+    closeAiSidebar.addEventListener('click', () => {
+        aiSidebar.classList.remove('open');
+    });
+
+    function addAiMessageToSidebar(text, isUser = false) {
+        const div = document.createElement('div');
+        div.className = `message ${isUser ? 'sent' : 'received ai-message'}`;
+        
+        const header = document.createElement('span');
+        header.className = 'message-header';
+        
+        if (!isUser) {
+            header.innerHTML = `
+                <span class="ai-icon-mini">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/>
+                    </svg>
+                </span>
+                AI Assistant
+            `;
+        } else {
+            header.textContent = 'You';
+        }
+        
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        content.textContent = text;
+        
+        div.appendChild(header);
+        div.appendChild(content);
+        aiMessages.appendChild(div);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+    }
+
+    sendAiBtn.addEventListener('click', () => {
+        const text = aiMsgInput.value.trim();
+        if (!text) return;
+
+        addAiMessageToSidebar(text, true);
+        aiMsgInput.value = '';
+
+        // Add a loading indicator from AI
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message received ai-message loading';
+        loadingDiv.id = 'aiLoading';
+        loadingDiv.innerHTML = `
+            <span class="message-header">
+                <span class="ai-icon-mini">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/>
+                    </svg>
+                </span>
+                AI Assistant
+            </span>
+            <div class="message-content">
+                <span class="thinking-dots">Thinking...</span>
+            </div>
+        `;
+        aiMessages.appendChild(loadingDiv);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+
+        socket.emit('ai message', text);
+    });
+
+    aiMsgInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendAiBtn.click();
+        }
+    });
+
+    socket.on('ai response', (data) => {
+        const loadingDiv = document.getElementById('aiLoading');
+        if (loadingDiv) loadingDiv.remove();
+        
+        addAiMessageToSidebar(data.text, false);
+    });
+
 });

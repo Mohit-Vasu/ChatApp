@@ -1,5 +1,6 @@
 const { Group, User } = require('../db');
 const { users } = require('./users');
+const { getAiResponse } = require('../ai');
 
 let groups = {};
 

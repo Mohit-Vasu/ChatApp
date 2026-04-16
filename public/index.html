@@ -28,6 +28,16 @@
     <div class="chat">
         <!-- Top Navigation / User Profile Header -->
         <div class="top-nav">
+            <button id="aiToggleBtn" class="ai-toggle-btn" title="Chat with AI">
+                <span class="ai-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/>
+                        <path d="M6 3L7 5L9 6L7 7L6 9L5 7L3 6L5 5L6 3Z"/>
+                        <path d="M18 14L19 16L21 17L19 18L18 20L17 18L15 17L17 16L18 14Z"/>
+                    </svg>
+                </span>
+                AI Assistant
+            </button>
             <div class="user-profile" id="userProfile">
                 <div class="user-info-toggle">
                     <div class="user-avatar" id="userAvatar">U</div>
@@ -87,6 +97,33 @@
                 <textarea id="msg" rows="1" placeholder="Type message..."></textarea>
                 <button onclick="send()">➤</button>
             </div>
+        </div>
+    </div>
+
+    <!-- AI Sidebar -->
+    <div id="aiSidebar" class="ai-sidebar">
+        <div class="ai-sidebar-header">
+            <h3>
+                <span class="ai-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/>
+                        <path d="M6 3L7 5L9 6L7 7L6 9L5 7L3 6L5 5L6 3Z"/>
+                        <path d="M18 14L19 16L21 17L19 18L18 20L17 18L15 17L17 16L18 14Z"/>
+                    </svg>
+                </span>
+                AI Assistant
+            </h3>
+            <button id="closeAiSidebar" class="close-btn">&times;</button>
+        </div>
+        <div id="aiMessages" class="ai-messages">
+            <div class="message received ai-message">
+                <span class="message-header">AI Assistant</span>
+                <div class="message-content">Hello! How can I help you today?</div>
+            </div>
+        </div>
+        <div class="ai-input-area">
+            <textarea id="aiMsgInput" placeholder="Ask AI anything..."></textarea>
+            <button id="sendAiBtn">➤</button>
         </div>
     </div>
 

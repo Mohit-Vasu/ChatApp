@@ -1,4 +1,5 @@
 const { PrivateChat, User } = require('../db');
+const { getAiResponse } = require('../ai');
 
 let privateChats = {};
 

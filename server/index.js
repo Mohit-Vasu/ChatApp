@@ -38,6 +38,7 @@ io.on('connection', (socket) => {
     require('./socket/users')(io, socket);
     require('./socket/groupChat')(io, socket);
     require('./socket/privateChat')(io, socket);
+    require('./socket/aiChat')(io, socket);
 });
 
 async function runDeletionJob() {
