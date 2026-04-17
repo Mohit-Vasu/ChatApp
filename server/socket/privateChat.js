@@ -24,7 +24,7 @@ function getRoomKey(user1, user2) {
 
 module.exports = (io, socket) => {
 
-    socket.on('private message', async ({ to, text, fileUrl, fileName, fileType, filePublicId, fileResourceType }) => {
+    socket.on('private message', async ({ to, text, fileUrl, fileName, fileType, filePublicId, fileResourceType, replyTo }) => {
         try {
             const fromUser = await User.findOne({ socketId: socket.id });
             if (!fromUser) return;
@@ -39,7 +39,11 @@ module.exports = (io, socket) => {
                 username: fromUser.username,
                 from: fromUser.username,
                 to,
-                time: new Date().toLocaleTimeString()
+                time: new Date().toLocaleTimeString(),
+                replyTo: replyTo ? {
+                    text: replyTo.text,
+                    from: replyTo.from
+                } : null
             };
 
             const roomKey = getRoomKey(fromUser.username, to);

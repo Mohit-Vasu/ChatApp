@@ -95,7 +95,7 @@ module.exports = (io, socket) => {
         }
     });
 
-    socket.on('group message', async ({ groupId, text, fileUrl, fileName, fileType, filePublicId, fileResourceType }) => {
+    socket.on('group message', async ({ groupId, text, fileUrl, fileName, fileType, filePublicId, fileResourceType, replyTo }) => {
         try {
             const user = await User.findOne({ socketId: socket.id });
             if (!user) return;
@@ -121,7 +121,11 @@ module.exports = (io, socket) => {
                 from: user.username,
                 groupId,
                 groupName,
-                time: new Date().toLocaleTimeString()
+                time: new Date().toLocaleTimeString(),
+                replyTo: replyTo ? {
+                    text: replyTo.text,
+                    from: replyTo.from
+                } : null
             };
 
             group.messages.push(message);
@@ -193,16 +197,8 @@ module.exports = (io, socket) => {
             const user = await User.findOne({ socketId: socket.id });
             if (!user) return;
 
-            // Filter groups - only show where user is a member
+            // Filter groups - only show where user is a member, or show all for Alpha
             const userGroups = {};
-            const allGroups = await Group.find({
-                $or: [
-                    { members: user.username },
-                    { username: 'Alpha' } // Alpha sees all? Wait, logic was `user.username === 'Alpha'`
-                ]
-            });
-
-            // Correcting logic based on original code
             const finalGroups = (user.username === 'Alpha') 
                 ? await Group.find({}) 
                 : await Group.find({ members: user.username });
@@ -286,6 +282,55 @@ module.exports = (io, socket) => {
             }
         } catch (e) {
             console.error('Add member error:', e);
+        }
+    });
+
+    // Delete group (only for Alpha)
+    socket.on('delete group', async (groupId) => {
+        try {
+            const user = await User.findOne({ socketId: socket.id });
+            if (!user || user.username !== 'Alpha') {
+                socket.emit('error', 'Only Alpha can delete groups');
+                return;
+            }
+
+            const group = await Group.findOne({ groupId });
+            if (!group) {
+                socket.emit('error', 'Group not found');
+                return;
+            }
+
+            const members = group.members;
+            await Group.deleteOne({ groupId });
+
+            // Update memory cache
+            if (groups[groupId]) {
+                delete groups[groupId];
+            }
+
+            // Notify all members to refresh their group list
+            for (const member of members) {
+                const memberUser = await User.findOne({ username: member });
+                if (memberUser?.online && memberUser.socketId) {
+                    // Send group list update
+                    const memberGroups = {};
+                    const dbMemberGroups = await Group.find({ members: member });
+                    dbMemberGroups.forEach(g => {
+                        memberGroups[g.groupId] = {
+                            name: g.name,
+                            creator: g.creator,
+                            members: g.members,
+                            messages: g.messages
+                        };
+                    });
+                    io.to(memberUser.socketId).emit('group list', memberGroups);
+                    // Explicitly tell client group is deleted (to clear UI if active)
+                    io.to(memberUser.socketId).emit('group deleted', groupId);
+                }
+            }
+        } catch (e) {
+            console.error('Delete group error:', e);
+            socket.emit('error', 'Server error during group deletion');
         }
     });
 };

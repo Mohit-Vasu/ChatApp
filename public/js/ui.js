@@ -9,6 +9,17 @@ function addMessage(msg, isMe = false) {
     header.className = 'message-header';
     header.textContent = isMe ? 'You' : (msg.username || 'User');
     
+    // Reply context if exists
+    if (msg.replyTo) {
+        const replyContext = document.createElement('div');
+        replyContext.className = 'message-reply-context';
+        replyContext.innerHTML = `
+            <span class="message-reply-user">${msg.replyTo.from}</span>
+            <span class="message-reply-text">${msg.replyTo.text}</span>
+        `;
+        div.appendChild(replyContext);
+    }
+
     const content = document.createElement('div');
     content.className = 'message-content';
     if (msg.text) {
@@ -17,6 +28,17 @@ function addMessage(msg, isMe = false) {
 
     div.appendChild(header);
     div.appendChild(content);
+
+    // Reply Button
+    const replyBtn = document.createElement('button');
+    replyBtn.className = 'reply-btn';
+    replyBtn.innerHTML = '⤴️';
+    replyBtn.title = 'Reply';
+    replyBtn.onclick = (e) => {
+        e.stopPropagation();
+        window.initiateReply(msg);
+    };
+    div.appendChild(replyBtn);
 
     // If there is a file attached
     if (msg.fileUrl) {

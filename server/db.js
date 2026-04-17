@@ -41,7 +41,11 @@ const groupSchema = new mongoose.Schema({
         fileName: String,
         fileType: String,
         filePublicId: String,
-        fileResourceType: String
+        fileResourceType: String,
+        replyTo: {
+            text: String,
+            from: String
+        }
     }]
 });
 
@@ -57,7 +61,11 @@ const privateChatSchema = new mongoose.Schema({
         fileName: String,
         fileType: String,
         filePublicId: String,
-        fileResourceType: String
+        fileResourceType: String,
+        replyTo: {
+            text: String,
+            from: String
+        }
     }]
 });
 

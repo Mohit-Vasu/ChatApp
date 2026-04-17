@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let current = { type: null, id: null };
     let users = [];
+    let replyingToMessage = null;
+
     const typingState = {
         active: false,
         timeoutId: null,
@@ -505,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset typing state on chat switch
         typingState.groupTypers.clear();
         updateTypingIndicator('');
+        cancelReply();
     };
 
     // ✅ SELECT GROUP
@@ -530,6 +533,26 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset typing state on chat switch
         typingState.groupTypers.clear();
         updateTypingIndicator('');
+        cancelReply();
+    };
+
+    // ✅ REPLY LOGIC
+    window.initiateReply = function (msg) {
+        replyingToMessage = msg;
+        const preview = document.getElementById('replyPreview');
+        const userText = preview.querySelector('.reply-user');
+        const contentText = preview.querySelector('.reply-text');
+
+        userText.textContent = `Replying to ${msg.from}`;
+        contentText.textContent = msg.text || (msg.fileType === 'image' ? '[Image]' : '[File]');
+        preview.style.display = 'flex';
+        input.focus();
+    };
+
+    window.cancelReply = function () {
+        replyingToMessage = null;
+        const preview = document.getElementById('replyPreview');
+        if (preview) preview.style.display = 'none';
     };
 
     // ✅ SEND
@@ -553,6 +576,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (fileData.resourceType) payload.fileResourceType = fileData.resourceType;
         }
 
+        // Add reply context if active
+        if (replyingToMessage) {
+            payload.replyTo = {
+                text: replyingToMessage.text || (replyingToMessage.fileType === 'image' ? '[Image]' : '[File]'),
+                from: replyingToMessage.from
+            };
+        }
+
         if (current.type === 'private') {
             payload.to = current.id;
             socket.emit('private message', payload);
@@ -562,6 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         input.value = '';
+        cancelReply();
         stopTyping();
     };
 

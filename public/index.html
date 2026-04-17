@@ -91,6 +91,14 @@
 
             <div id="typingIndicator" class="typing-indicator"></div>
 
+            <div id="replyPreview" class="reply-preview" style="display: none;">
+                <div class="reply-content">
+                    <span class="reply-user">Replying to User</span>
+                    <p class="reply-text">Original message...</p>
+                </div>
+                <button onclick="cancelReply()" class="cancel-reply">✕</button>
+            </div>
+
             <div class="input-area">
                 <input type="file" id="fileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt" multiple />
                 <button onclick="document.getElementById('fileInput').click()" class="attach-btn" title="Attach File">📎</button>
