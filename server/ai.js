@@ -18,14 +18,6 @@ async function getAiResponse(userInput) {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             }
         });
-
-        // The response format for this specific (non-standard) endpoint is likely 
-        // response.data.output or response.data.choices[0].message.content
-        // Based on "input" and "model: gpt-5-nano", it might be a new/preview API.
-        // If it's standard OpenAI chat completion, it would be choices[0].message.content.
-        // If it's a newer "responses" endpoint, we'll try to extract the text.
-        
-        // console.log('AI Response:', JSON.stringify(response.data));
         
         // Handle the specific JSON structure provided by the user
         if (response.data.output && Array.isArray(response.data.output)) {

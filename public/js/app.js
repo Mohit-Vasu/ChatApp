@@ -158,6 +158,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('loginPage').style.display = 'none';
         document.querySelector('.app').style.display = 'flex';
 
+        // Show admin panel if Alpha
+        if (username === 'Alpha') {
+            document.getElementById('adminPanel').style.display = 'block';
+            socket.emit('get pending users');
+        } else {
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
         socket.emit('get users');
         socket.emit('get groups'); // Request groups list
 
@@ -191,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (attempted) document.getElementById('regUsername').value = attempted;
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('registerPage').style.display = 'flex';
+        } else if (msg === 'your account open approvel get by admin') {
+            alert('your account open approvel get by admin');
+            localStorage.removeItem('username');
+            localStorage.removeItem('password');
+            document.getElementById('loginPassword').value = '';
         } else {
             alert('Authentication failed: ' + msg);
             document.getElementById('loginPassword').value = '';
@@ -199,6 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('register success', (msg) => {
         alert(msg);
+        if (msg === 'your account open approvel get by admin') {
+            document.getElementById('registerPage').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+            return;
+        }
         const user = document.getElementById('regUsername').value.trim();
         const pass = document.getElementById('regPassword').value;
         username = user;
@@ -863,6 +881,57 @@ document.addEventListener('DOMContentLoaded', () => {
             password = newPass;
             localStorage.setItem('password', newPass);
         }
+    });
+
+    // Handle pending users list for Admin (Alpha)
+    socket.on('pending users list', (pendingUsers) => {
+        const container = document.getElementById('pendingUsers');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        if (pendingUsers.length === 0) {
+            container.innerHTML = '<div style="padding: 10px; font-size: 12px; opacity: 0.6;">No pending approvals</div>';
+            return;
+        }
+
+        pendingUsers.forEach(user => {
+            const div = document.createElement('div');
+            div.className = 'pending-user';
+            div.innerHTML = `
+                <span style="font-size: 13px;">${user.username}</span>
+                <div class="pending-actions">
+                    <button onclick="approveUser('${user.username}')" class="approve-btn">Approve</button>
+                    <button onclick="rejectUser('${user.username}')" class="reject-btn">Reject</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    });
+
+    window.approveUser = function (username) {
+        if (confirm(`Approve user ${username}?`)) {
+            socket.emit('approve user', username);
+        }
+    };
+
+    window.rejectUser = function (username) {
+        if (confirm(`Reject registration for user ${username}?`)) {
+            socket.emit('reject user', username);
+        }
+    };
+
+    socket.on('user approved', (username) => {
+        alert(`User ${username} approved!`);
+        socket.emit('get pending users');
+    });
+
+    socket.on('user rejected', (username) => {
+        alert(`User ${username} rejected!`);
+        socket.emit('get pending users');
+    });
+
+    socket.on('approved', (msg) => {
+        alert(msg);
     });
 
     // Automatically clear notifications for current chat when window is focused

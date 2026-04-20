@@ -11,7 +11,8 @@ async function initUsers() {
                 username: u.username,
                 password: u.password,
                 socketId: u.socketId,
-                online: u.online
+                online: u.online,
+                isApproved: u.isApproved
             };
         });
         console.log('Users initialized from MongoDB');
@@ -21,6 +22,10 @@ async function initUsers() {
 }
 
 initUsers();
+
+function getApprovedUsers() {
+    return Object.values(users).filter(u => u.isApproved || u.username === 'Alpha');
+}
 
 module.exports = (io, socket) => {
 
@@ -41,6 +46,12 @@ module.exports = (io, socket) => {
 
             if (user) {
                 if (user.password === providedPassword) {
+                    // Check if user is approved
+                    if (!user.isApproved && user.username !== 'Alpha') {
+                        socket.emit('auth failed', 'your account open approvel get by admin');
+                        return;
+                    }
+
                     user.socketId = socket.id;
                     user.online = true;
                     await user.save();
@@ -50,11 +61,12 @@ module.exports = (io, socket) => {
                         username: user.username,
                         password: user.password,
                         socketId: user.socketId,
-                        online: user.online
+                        online: user.online,
+                        isApproved: user.isApproved
                     };
 
                     socket.emit('auth success', { username: trimmedUsername });
-                    io.emit('user list', Object.values(users));
+                    io.emit('user list', getApprovedUsers());
                 } else {
                     socket.emit('auth failed', 'Incorrect password');
                 }
@@ -79,14 +91,14 @@ module.exports = (io, socket) => {
                     users[user.username].online = false;
                 }
             }
-            io.emit('user list', Object.values(users));
+            io.emit('user list', getApprovedUsers());
         } catch (e) {
             console.error('Disconnect error:', e);
         }
     });
 
     socket.on('get users', () => {
-        socket.emit('user list', Object.values(users));
+        socket.emit('user list', getApprovedUsers());
     });
 
     socket.on('delete user', async (targetUsername) => {
@@ -113,7 +125,7 @@ module.exports = (io, socket) => {
                 delete users[targetUsername];
 
                 // Notify everyone to refresh their data
-                io.emit('user list', Object.values(users));
+                io.emit('user list', getApprovedUsers());
                 io.emit('user deleted', targetUsername);
 
                 // Disconnect the deleted user if they are online
@@ -179,7 +191,8 @@ module.exports = (io, socket) => {
                 username: trimmedUsername,
                 password: password || '',
                 socketId: socket.id,
-                online: true
+                online: true,
+                isApproved: trimmedUsername === 'Alpha' // Alpha is pre-approved
             });
             await newUser.save();
 
@@ -188,15 +201,117 @@ module.exports = (io, socket) => {
                 username: trimmedUsername,
                 password: password || '',
                 socketId: socket.id,
-                online: true
+                online: true,
+                isApproved: newUser.isApproved
             };
 
-            socket.emit('register success', 'Account created');
-            socket.emit('auth success', { username: trimmedUsername, isNew: true });
-            io.emit('user list', Object.values(users));
+            if (newUser.isApproved) {
+                socket.emit('register success', 'Account created');
+                socket.emit('auth success', { username: trimmedUsername, isNew: true });
+                io.emit('user list', getApprovedUsers());
+            } else {
+                socket.emit('register success', 'your account open approvel get by admin');
+            }
         } catch (e) {
             console.error('Register error:', e);
             socket.emit('register failed', 'Server error during registration');
+        }
+    });
+
+    // Get pending users for Alpha
+    socket.on('get pending users', async () => {
+        try {
+            const user = await User.findOne({ socketId: socket.id });
+            if (user && user.username === 'Alpha') {
+                const pendingUsers = await User.find({ isApproved: false });
+                socket.emit('pending users list', pendingUsers);
+            }
+        } catch (e) {
+            console.error('Get pending users error:', e);
+        }
+    });
+
+    // Approve user
+    socket.on('approve user', async (targetUsername) => {
+        try {
+            const admin = await User.findOne({ socketId: socket.id });
+            if (!admin || admin.username !== 'Alpha') {
+                socket.emit('error', 'Only Alpha can approve users');
+                return;
+            }
+
+            const user = await User.findOne({ username: targetUsername });
+            if (user) {
+                user.isApproved = true;
+                await user.save();
+
+                // Update memory cache
+                if (users[targetUsername]) {
+                    users[targetUsername].isApproved = true;
+                } else {
+                    users[targetUsername] = {
+                        username: user.username,
+                        password: user.password,
+                        socketId: user.socketId,
+                        online: user.online,
+                        isApproved: true
+                    };
+                }
+
+                socket.emit('user approved', targetUsername);
+                io.emit('user list', getApprovedUsers());
+                
+                // If user is online, notify them (though they wouldn't be able to log in anyway)
+                if (user.socketId) {
+                    const targetSocket = io.sockets.sockets.get(user.socketId);
+                    if (targetSocket) {
+                        targetSocket.emit('approved', 'Your account has been approved by Alpha. You can now log in.');
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Approve user error:', e);
+            socket.emit('error', 'Server error during approval');
+        }
+    });
+
+    // Reject and delete user
+    socket.on('reject user', async (targetUsername) => {
+        try {
+            const admin = await User.findOne({ socketId: socket.id });
+            if (!admin || admin.username !== 'Alpha') {
+                socket.emit('error', 'Only Alpha can reject users');
+                return;
+            }
+
+            const user = await User.findOne({ username: targetUsername });
+            if (user) {
+                if (user.isApproved) {
+                    socket.emit('error', 'Cannot reject an already approved user. Use delete instead.');
+                    return;
+                }
+
+                const targetSocketId = user.socketId;
+                await User.deleteOne({ username: targetUsername });
+                
+                // Update memory cache
+                delete users[targetUsername];
+
+                socket.emit('user rejected', targetUsername);
+                // No need to emit user list since they were never in it
+                
+                // If user is online, notify them and disconnect
+                if (targetSocketId) {
+                    const targetSocket = io.sockets.sockets.get(targetSocketId);
+                    if (targetSocket) {
+                        targetSocket.emit('deleted', 'Your registration request has been rejected by Alpha.');
+                        targetSocket.disconnect();
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Reject user error:', e);
+            socket.emit('error', 'Server error during rejection');
         }
     });
 };

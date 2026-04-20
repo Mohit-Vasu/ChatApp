@@ -40,11 +40,61 @@ body {
 }
 
 #users,
-#groups {
+#groups,
+#pendingUsers {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow-y: visible;
+    overflow-x: visible;
     margin-bottom: 10px;
+}
+
+.pending-user {
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    /* flex-direction: column; */
+    gap: 8px;
+    border-left: 3px solid #ffd700;
+    padding: 15px;
+}
+
+.pending-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.approve-btn {
+    padding: 5px 10px;
+    background: #25d366;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.reject-btn {
+    padding: 5px 10px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.approve-btn:hover {
+    background: #1ebe57;
+}
+
+.reject-btn:hover {
+    background: #c0392b;
 }
 
 .user,
