@@ -1,14 +1,103 @@
+function renderMessageContent(text) {
+    if (!text) return '';
+    
+    // Configure marked for code block customization
+    const renderer = new marked.Renderer();
+    
+    // Support both old and new marked versions
+    const originalCodeRenderer = renderer.code.bind(renderer);
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    renderer.code = function(codeOrObj, language, isEscaped) {
+        let code, lang;
+        if (typeof codeOrObj === 'object') {
+            code = codeOrObj.text;
+            lang = codeOrObj.lang;
+        } else {
+            code = codeOrObj;
+            lang = language;
+        }
+
+        const displayLang = lang || 'code';
+        const hasLangClass = lang ? 'has-lang' : '';
+        const escapedCode = escapeHtml(code);
+        
+        return `
+            <div class="code-block-container ${hasLangClass}">
+                <div class="code-block-header">
+                    <span class="code-lang">${displayLang}</span>
+                    <button class="copy-code-btn" onclick="copyCode(this)">
+                        <span class="copy-icon">📋</span> Copy
+                    </button>
+                </div>
+                <pre class="terminal-style"><code class="${lang ? 'language-' + lang : ''}">${escapedCode}</code></pre>
+            </div>
+        `;
+    };
+
+    marked.setOptions({
+        renderer: renderer,
+        breaks: true,
+        gfm: true,
+        headerIds: false,
+        mangle: false
+    });
+
+    return marked.parse(text);
+}
+
+// Global copy function for code blocks
+window.copyCode = function(button) {
+    const container = button.closest('.code-block-container');
+    const code = container.querySelector('code').textContent;
+    
+    navigator.clipboard.writeText(code).then(() => {
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<span class="copy-icon">✅</span> Copied!';
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+            button.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy code: ', err);
+    });
+};
+
+// Global copy function for simple message text
+window.copyMessageText = function(button, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '✅';
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+            button.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+};
+
 function addMessage(msg, isMe = false) {
     const messages = document.getElementById('messages');
 
     const div = document.createElement('div');
     div.className = `message ${isMe ? 'sent' : 'received'} ${msg.isAi ? 'ai-message' : ''}`;
-    div.title = 'Click to copy message text';
-    
+    // div.title = 'Click to copy message text'; // Remove this as it might interfere with code block copy
+    div.dataset.messageId = msg.messageId || `${msg.from}-${msg.time}`;
+
     const header = document.createElement('span');
     header.className = 'message-header';
     header.textContent = isMe ? 'You' : (msg.username || 'User');
-    
+
     // Reply context if exists
     if (msg.replyTo) {
         const replyContext = document.createElement('div');
@@ -23,11 +112,34 @@ function addMessage(msg, isMe = false) {
     const content = document.createElement('div');
     content.className = 'message-content';
     if (msg.text) {
-        content.textContent = msg.text;
+        // Use markdown rendering
+        content.innerHTML = renderMessageContent(msg.text);
+        
+        // Add copy button for text messages
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'msg-copy-btn';
+        copyBtn.innerHTML = '📋';
+        copyBtn.title = 'Copy message';
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.copyMessageText(copyBtn, msg.text);
+        };
+        div.appendChild(copyBtn);
     }
 
     div.appendChild(header);
     div.appendChild(content);
+
+    // Reaction Button
+    const reactionBtn = document.createElement('button');
+    reactionBtn.className = 'reaction-btn';
+    reactionBtn.innerHTML = '😀';
+    reactionBtn.title = 'React with emoji';
+    reactionBtn.onclick = (e) => {
+        e.stopPropagation();
+        openEmojiPicker(msg, isMe, div);
+    };
+    div.appendChild(reactionBtn);
 
     // Reply Button
     const replyBtn = document.createElement('button');
@@ -44,7 +156,7 @@ function addMessage(msg, isMe = false) {
     if (msg.fileUrl) {
         const fileContainer = document.createElement('div');
         fileContainer.className = 'file-message';
-        
+
         if (msg.fileType === 'image') {
             const img = document.createElement('img');
             img.src = msg.fileUrl;
@@ -59,17 +171,54 @@ function addMessage(msg, isMe = false) {
             fileContainer.appendChild(img);
         } else {
             const link = document.createElement('a');
-            link.href = msg.fileUrl;
+
+            // For Cloudinary downloads, we use fl_attachment to force the download
+            // The server now provides a URL that already ends with the original filename
+            let downloadUrl = msg.fileUrl;
+            if (!downloadUrl.includes('/fl_attachment')) {
+                downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+            }
+
+            link.href = downloadUrl;
             link.target = '_blank';
-            link.innerHTML = `<span class="file-icon">📄</span> <span class="file-name">${msg.fileName || 'Document'}</span>`;
+            link.download = msg.fileName || 'file';
+
+            // Get icon based on file extension
+            const ext = (msg.fileName || '').split('.').pop().toLowerCase();
+            let icon = '📄';
+            if (ext === 'pdf') icon = '📕';
+            else if (['doc', 'docx'].includes(ext)) icon = '📘';
+            else if (['xls', 'xlsx'].includes(ext)) icon = '📗';
+            else if (['ppt', 'pptx'].includes(ext)) icon = '📙';
+            else if (ext === 'txt') icon = '📝';
+            else if (['zip', 'rar', '7z'].includes(ext)) icon = '📦';
+            else if (['mp3', 'wav', 'ogg'].includes(ext)) icon = '🎵';
+            else if (['mp4', 'mov', 'avi'].includes(ext)) icon = '🎬';
+
+            link.innerHTML = `
+                <span class="file-icon">${icon}</span>
+                <span class="file-name">${msg.fileName || 'Document'}</span>
+                <span class="download-hint" style="margin-left: auto; font-size: 0.8em; opacity: 0.6;">⬇️</span>
+            `;
             link.onclick = (e) => e.stopPropagation();
             fileContainer.appendChild(link);
         }
-        
+
         div.appendChild(fileContainer);
     }
 
-    div.onclick = () => {
+    // Render existing reactions
+    if (msg.reactions) {
+        renderReactions(msg, div);
+    }
+
+    // Update click to copy logic to avoid conflict with code block buttons
+    div.onclick = (e) => {
+        // If the click was on a button or inside a code block, don't trigger general copy
+        if (e.target.closest('button') || e.target.closest('.code-block-container')) {
+            return;
+        }
+        
         if (!msg.text) return;
         navigator.clipboard.writeText(msg.text).then(() => {
             div.classList.add('copied');
@@ -190,7 +339,7 @@ function renderGroups(groups) {
         container.className = 'group-container';
         const isActive = window.current && window.current.type === 'group' && window.current.id === id;
         if (isActive) container.classList.add('active');
-        
+
         container.style.display = 'flex';
         container.style.justifyContent = 'space-between';
         container.style.alignItems = 'center';
@@ -204,7 +353,7 @@ function renderGroups(groups) {
         d.dataset.members = g.members ? g.members.join(',') : '';
         const memberCount = g.members ? g.members.length : 0;
         const notify = window.notifications[id] ? ` (${window.notifications[id]})` : '';
-        
+
         // Group Info Container
         const groupInfo = document.createElement('div');
         groupInfo.style.display = 'flex';
@@ -393,4 +542,157 @@ function hideNotification(notification) {
     setTimeout(() => {
         notification.remove();
     }, 300);
+}
+
+const EMOJIS = [
+    // Smiles & Emotions
+    '😄', '😅', '😂', '🤣', '🙃', '😌', '🥰', '😗', '😙', '😚', '😛', '😝', '😜', '🤨', '🧐', '🤓', '🤩', '🥳', '😒', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😭', '😤', '😡', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '😴', '🤤', '😪', '🤐', '🥴', '🤢', '🤮', '🤧', '🤨', '🤫', '🤥', '🤡', '👻', '👽', '🤖', '💩', '💀', '👾',
+    // Gestures & Body
+    '🤚', '✋', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👆', '🖕', '👇', '☝️', '👍', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '🦾', '🦵', '🦿', '🦶', '👂', '🦻', '👃', '🧠', '🦷', '🦴', '👀', '👁️', '👅', '👄', '💋', '🩸',
+    // Hearts & Symbols
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '⚛️', '🉑', '☢️', '☣️', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '❗', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '⚠️', '🚸', '🔰', '♻️', '🈯', '💹', '❇️', '✳️', '❎', '✅', '💠', '🌀', '➿', '🌐', 'Ⓜ️', '🏧', '🈂️', '♿', '🚾', '🅿️', '🚰', '🚹', '🎦', '🈁', '🆖', '🆗', '🆙', '🆒', '🆕', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '▶️', '⏸️', '⏯️', '⏹️', '⏺️', '⏏️', '⏭️', '⏮️', '⏩', '⏪', '⏫', '⏬', '◀️', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾️', '™️', '©️', '®️', '👁️‍️', '🔙', '🔝', '🔜',
+    // Animals & Nature
+    '🐹', '🐰', '🦊', '🐻', '🐼', '🐮', '🐵', '🙈', '🙉', '🐒', '🐔', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐝', '🐛', '🐌', '🐞', '🐜', '🦟', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🦓', '🦍', '🦧', '🐪', '🦒', '🦘', '🐂', '🐄', '🐎', '🐕', '🐩', '🦃', '🕊️', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐾', '🐉', '🌵', '🎄', '🌲', '🌳', '🌴', '🌱', '🌿', '☘️', '🍀', '🎍', '🎋', '🍃', '🍂', '🍁', '🍄', '🌾', '💐', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🌞', '🌝', '🌛', '🌜', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '🌙', '🌎', '🪐', '💫', '⭐️', '✨', '⚡️', '☄️', '💥', '🔥', '☀️', '⛅️', '☁️', '⛈️', '🌩️', '❄️', '☃️', '⛄️', '💨', '💧', '💦', '☔️', '☂️',
+];
+
+window.currentReactingMessage = null;
+
+function openEmojiPicker(msgObj, isMe, messageDiv) {
+    console.log('Opening emoji picker for message:', msgObj.messageId || `${msgObj.from}-${msgObj.time}`);
+    window.currentReactingMessage = { msg: msgObj, isMe, messageDiv };
+
+    const modal = document.getElementById('emojiPickerModal');
+    const grid = document.getElementById('emojiGrid');
+    if (!modal || !grid) {
+        console.error('Emoji picker elements not found');
+        return;
+    }
+    grid.innerHTML = '';
+
+    EMOJIS.forEach(emoji => {
+        if (emoji === 'generate-id') return; // Filter out the typo if any
+        const btn = document.createElement('button');
+        btn.textContent = emoji;
+        btn.type = 'button';
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            console.log('Emoji selected:', emoji);
+            selectReaction(emoji);
+        };
+        grid.appendChild(btn);
+    });
+
+    modal.style.display = 'flex';
+}
+
+function closeEmojiPicker() {
+    const modal = document.getElementById('emojiPickerModal');
+    modal.style.display = 'none';
+    window.currentReactingMessage = null;
+}
+
+function selectReaction(emoji) {
+    if (!window.currentReactingMessage) {
+        console.error('No message selected for reaction');
+        return;
+    }
+
+    if (!window.current || !window.current.type || !window.current.id) {
+        console.error('No active chat for reaction');
+        return;
+    }
+
+    const { msg } = window.currentReactingMessage;
+    const currentUsername = window.username || localStorage.getItem('username') || '';
+
+    // Robust check for existing reaction
+    let hasReacted = false;
+    if (msg.reactions && msg.reactions[emoji]) {
+        const reactionList = msg.reactions[emoji];
+        if (Array.isArray(reactionList)) {
+            hasReacted = reactionList.some(r => r.username === currentUsername);
+        }
+    }
+
+    const payload = {
+        chatType: window.current.type,
+        chatId: window.current.id,
+        messageId: msg.messageId || `${msg.from}-${msg.time}`,
+        emoji,
+        username: currentUsername
+    };
+
+    if (hasReacted) {
+        socket.emit('remove reaction', payload);
+    } else {
+        socket.emit('add reaction', payload);
+    }
+
+    closeEmojiPicker();
+}
+
+function renderReactions(msg, messageDiv) {
+    const currentUsername = window.username || localStorage.getItem('username') || '';
+    let reactionsDiv = messageDiv.querySelector('.message-reactions');
+
+    if (!msg.reactions || Object.keys(msg.reactions).length === 0) {
+        if (reactionsDiv) reactionsDiv.remove();
+        return;
+    }
+
+    if (!reactionsDiv) {
+        reactionsDiv = document.createElement('div');
+        reactionsDiv.className = 'message-reactions';
+        messageDiv.appendChild(reactionsDiv);
+    }
+
+    reactionsDiv.innerHTML = '';
+
+    Object.entries(msg.reactions).forEach(([emoji, users]) => {
+        if (!users || users.length === 0) return;
+
+        const badge = document.createElement('span');
+        badge.className = 'reaction-badge';
+
+        const hasMyReaction = users.some(r => r.username === currentUsername);
+        if (hasMyReaction) {
+            badge.classList.add('my-reaction');
+        }
+
+        const emojiSpan = document.createElement('span');
+        emojiSpan.className = 'reaction-emoji';
+        emojiSpan.textContent = emoji;
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'reaction-count';
+        countSpan.textContent = users.length;
+
+        const tooltip = document.createElement('span');
+        tooltip.className = 'reaction-tooltip';
+        tooltip.textContent = users.map(r => r.username).join(', ');
+
+        badge.appendChild(emojiSpan);
+        badge.appendChild(countSpan);
+        badge.appendChild(tooltip);
+
+        badge.onclick = (e) => {
+            e.stopPropagation();
+            window.currentReactingMessage = { msg, messageDiv };
+            selectReaction(emoji);
+        };
+
+        reactionsDiv.appendChild(badge);
+    });
+}
+
+function updateMessageReactions(msg) {
+    const messages = document.querySelectorAll('.message');
+    const msgId = msg.messageId || `${msg.from}-${msg.time}`;
+
+    messages.forEach(messageDiv => {
+        const divMsgId = messageDiv.dataset.messageId;
+        if (divMsgId === msgId) {
+            renderReactions(msg, messageDiv);
+        }
+    });
 }

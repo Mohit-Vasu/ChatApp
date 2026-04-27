@@ -1,226 +1,246 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Chat App</title>
-    <link rel="icon"  href="fevicon/android-chrome-512x512-removebg-preview.png">
+    <link rel="icon" href="fevicon/android-chrome-512x512-removebg-preview.png">
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-<div class="app" style="display: none;">
+    <div class="app" style="display: none;">
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2 style="display: flex; align-items: center;"><img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp" style="width: 45px; height: 40px; margin-right: 5px;"> ChatApp</h2>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2 style="display: flex; align-items: center;"><img
+                    src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp"
+                    style="width: 45px; height: 40px; margin-right: 5px;"> ChatApp</h2>
 
-        <h4>👥 Users</h4>
-        <div id="users"></div>
+            <h4>👥 Users</h4>
+            <div id="users"></div>
 
-        <h4>👨‍👩‍👧 Groups</h4>
-        <div id="groups"></div>
+            <h4>👨‍👩‍👧 Groups</h4>
+            <div id="groups"></div>
 
-        <div id="adminPanel" style="display: none;">
-            <h4>🛡️ Admin Panel</h4>
-            <div id="pendingUsers" class="pending-users-list"></div>
+            <div id="adminPanel" style="display: none;">
+                <h4>🛡️ Admin Panel</h4>
+                <div id="pendingUsers" class="pending-users-list"></div>
+            </div>
+
+            <button onclick="createGroup()" class="sidebar-btn create-group-btn">
+                <span>+</span> Create New Group
+            </button>
         </div>
 
-        <button onclick="createGroup()" class="sidebar-btn create-group-btn">
-            <span>+</span> Create New Group
-        </button>
-    </div>
-
-    <!-- Chat -->
-    <div class="chat">
-        <!-- Top Navigation / User Profile Header -->
-        <div class="top-nav">
-            <button id="aiToggleBtn" class="ai-toggle-btn" title="Chat with AI">
-                <span class="ai-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/>
-                        <path d="M6 3L7 5L9 6L7 7L6 9L5 7L3 6L5 5L6 3Z"/>
-                        <path d="M18 14L19 16L21 17L19 18L18 20L17 18L15 17L17 16L18 14Z"/>
-                    </svg>
-                </span>
-                AI Assistant
-            </button>
-            <div class="user-profile" id="userProfile">
-                <div class="user-info-toggle">
-                    <div class="user-avatar" id="userAvatar">U</div>
-                    <span id="currentUserNav">User</span>
-                    <span class="dropdown-arrow">▼</span>
-                </div>
-                <div class="profile-dropdown" id="profileDropdown">
-                    <div class="dropdown-header">
-                        <div class="header-avatar" id="headerAvatar">U</div>
-                        <div class="header-info">
-                            <span id="headerName">User</span>
-                            <span class="status-text">Online</span>
+        <!-- Chat -->
+        <div class="chat">
+            <!-- Top Navigation / User Profile Header -->
+            <div class="top-nav">
+                <button id="aiToggleBtn" class="ai-toggle-btn" title="Chat with AI">
+                    <span class="ai-icon">
+                        <img src="/fevicon/github-copilot-icon.webp" alt="AI" style="width: 20px; height: 20px; border-radius: 4px; vertical-align: middle; margin-right: 5px; filter: brightness(0) invert(1);">
+                    </span>
+                    AI Assistant
+                </button>
+                <div class="user-profile" id="userProfile">
+                    <div class="user-info-toggle">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="currentUserNav">User</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="dropdown-header">
+                            <div class="header-avatar" id="headerAvatar">U</div>
+                            <div class="header-info">
+                                <span id="headerName">User</span>
+                                <span class="status-text">Online</span>
+                            </div>
+                        </div>
+                        <div class="dropdown-item" onclick="changePassword()">
+                            <span class="item-icon">🔑</span>
+                            <span class="item-label">Change Password</span>
+                        </div>
+                        <div class="dropdown-item logout" onclick="logout()">
+                            <span class="item-icon">🚪</span>
+                            <span class="item-label">Logout</span>
                         </div>
                     </div>
-                    <div class="dropdown-item" onclick="changePassword()">
-                        <span class="item-icon">🔑</span> 
-                        <span class="item-label">Change Password</span>
+                </div>
+            </div>
+
+            <!-- Welcome Screen -->
+            <div id="welcomeScreen" class="welcome-screen">
+                <div class="welcome-content">
+                    <div class="welcome-icon">
+                        <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp">
                     </div>
-                    <div class="dropdown-item logout" onclick="logout()">
-                        <span class="item-icon">🚪</span> 
-                        <span class="item-label">Logout</span>
+                    <h2>Welcome to ChatApp</h2>
+                    <p>Select a friend or join a group to start messaging instantly.</p>
+                    <div class="live-status-badge">
+                        <span class="pulse"></span> Live Connection Active
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Welcome Screen -->
-        <div id="welcomeScreen" class="welcome-screen">
-            <div class="welcome-content">
-                <div class="welcome-icon">
-                    <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp">
+            <!-- Chat Content (Hidden by default) -->
+            <div id="chatContent" style="display: none; flex-direction: column; flex: 1;">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <div id="chatTitle" class="chat-title">Select a chat</div>
+                        <div id="chatStatus" class="chat-status"></div>
+                    </div>
                 </div>
-                <h2>Welcome to ChatApp</h2>
-                <p>Select a friend or join a group to start messaging instantly.</p>
-                <div class="live-status-badge">
-                    <span class="pulse"></span> Live Connection Active
+
+                <div id="messages" class="messages"></div>
+
+                <div id="typingIndicator" class="typing-indicator"></div>
+
+                <div id="replyPreview" class="reply-preview" style="display: none;">
+                    <div class="reply-content">
+                        <span class="reply-user">Replying to User</span>
+                        <p class="reply-text">Original message...</p>
+                    </div>
+                    <button onclick="cancelReply()" class="cancel-reply">✕</button>
                 </div>
-            </div>
-        </div>
 
-        <!-- Chat Content (Hidden by default) -->
-        <div id="chatContent" style="display: none; flex-direction: column; flex: 1;">
-            <div class="chat-header">
-                <div class="chat-header-info">
-                    <div id="chatTitle" class="chat-title">Select a chat</div>
-                    <div id="chatStatus" class="chat-status"></div>
-                </div>
-            </div>
-
-            <div id="messages" class="messages"></div>
-
-            <div id="typingIndicator" class="typing-indicator"></div>
-
-            <div id="replyPreview" class="reply-preview" style="display: none;">
-                <div class="reply-content">
-                    <span class="reply-user">Replying to User</span>
-                    <p class="reply-text">Original message...</p>
-                </div>
-                <button onclick="cancelReply()" class="cancel-reply">✕</button>
-            </div>
-
-            <div class="input-area">
-                <input type="file" id="fileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt" multiple />
+                <div class="input-area">
+                <input type="file" id="fileInput" style="display: none;" multiple />
                 <button onclick="document.getElementById('fileInput').click()" class="attach-btn" title="Attach File">📎</button>
                 <textarea id="msg" rows="1" placeholder="Type message..."></textarea>
                 <button onclick="send()">➤</button>
             </div>
-        </div>
-    </div>
-
-    <!-- AI Sidebar -->
-    <div id="aiSidebar" class="ai-sidebar">
-        <div class="ai-sidebar-header">
-            <h3>
-                <span class="ai-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/>
-                        <path d="M6 3L7 5L9 6L7 7L6 9L5 7L3 6L5 5L6 3Z"/>
-                        <path d="M18 14L19 16L21 17L19 18L18 20L17 18L15 17L17 16L18 14Z"/>
-                    </svg>
-                </span>
-                AI Assistant
-            </h3>
-            <button id="closeAiSidebar" class="close-btn">&times;</button>
-        </div>
-        <div id="aiMessages" class="ai-messages">
-            <div class="message received ai-message">
-                <span class="message-header">AI Assistant</span>
-                <div class="message-content">Hello! How can I help you today?</div>
             </div>
         </div>
-        <div class="ai-input-area">
-            <textarea id="aiMsgInput" placeholder="Ask AI anything..."></textarea>
-            <button id="sendAiBtn">➤</button>
+
+        <!-- AI Sidebar -->
+        <div id="aiSidebar" class="ai-sidebar">
+            <div class="ai-sidebar-header">
+                <h3>
+                    <span class="ai-icon">
+                        <img src="/fevicon/github-copilot-icon.webp" alt="AI" style="width: 24px; height: 24px; border-radius: 4px;">
+                    </span>
+                    AI Assistant
+                </h3>
+                <div class="ai-header-actions">
+                    <button id="newAiChatBtn" class="new-chat-btn" title="New Chat">＋</button>
+                    <button id="closeAiSidebar" class="close-btn">&times;</button>
+                </div>
+            </div>
+            <div id="aiMessages" class="ai-messages">
+                <div class="message received ai-message">
+                    <span class="message-header">AI Assistant</span>
+                    <div class="message-content">Hello! How can I help you today?</div>
+                </div>
+            </div>
+            <!-- Image preview area for AI uploads -->
+            <div id="aiImagePreview" class="ai-image-preview" style="display: none;">
+                <img id="aiPreviewImg" src="" alt="Preview">
+                <button id="aiRemoveImg" class="remove-img-btn">&times;</button>
+            </div>
+            <div class="ai-input-area">
+                <input type="file" id="aiImageInput" accept="image/*" style="display: none;">
+                <button id="aiUploadBtn" class="ai-upload-btn" title="Upload image">📷</button>
+                <textarea id="aiMsgInput" placeholder="Ask AI anything..."></textarea>
+                <button id="sendAiBtn">➤</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Attractive Login Page -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
+                <h1>Welcome to ChatApp</h1>
+                <p>Connect with friends and groups instantly</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                <button type="submit" class="login-btn">Login / Join</button>
+            </form>
+            <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
+                Don't have an account?
+                <a href="#" id="openRegister" style="color:#128c7e;text-decoration:none;font-weight:600">Register</a>
+            </div>
         </div>
     </div>
 
-</div>
-
-<!-- Attractive Login Page -->
-<div id="loginPage" class="login-page">
-    <div class="login-container">
-        <div class="login-header">
-            <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
-            <h1>Welcome to ChatApp</h1>
-            <p>Connect with friends and groups instantly</p>
+    <!-- Register Page -->
+    <div id="registerPage" class="login-page" style="display:none">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
+                <h1>Create your account</h1>
+                <p>Please enter your details to register</p>
+            </div>
+            <form id="registerForm" class="login-form">
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" placeholder="Choose a password" required>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirm">Confirm Password</label>
+                    <input type="password" id="regConfirm" placeholder="Re-enter password" required>
+                </div>
+                <button type="submit" class="login-btn">Register</button>
+            </form>
+            <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
+                Already have an account?
+                <a href="#" id="openLogin" style="color:#128c7e;text-decoration:none;font-weight:600">Login</a>
+            </div>
         </div>
-        <form id="loginForm" class="login-form">
+    </div>
+
+    <div id="notification-container"></div>
+
+    <!-- Emoji Picker Modal -->
+    <div id="emojiPickerModal" class="emoji-picker-modal">
+        <div class="emoji-picker-content">
+            <div class="emoji-picker-header">
+                <span>React with emoji</span>
+                <button onclick="closeEmojiPicker()" class="emoji-picker-close">&times;</button>
+            </div>
+            <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+    </div>
+
+    <!-- Member Add Modal -->
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Add Member</h3>
+            <div id="selectedMembers" class="selected-members"></div>
             <div class="form-group">
-                <label for="loginUsername">Username</label>
-                <input type="text" id="loginUsername" placeholder="Enter your username" required>
+                <label for="modalInput" id="modalLabel">Username:</label>
+                <input type="text" id="modalInput" list="user-list" autocomplete="off"
+                    placeholder="Type username and press enter">
+                <datalist id="user-list"></datalist>
             </div>
-            <div class="form-group">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" placeholder="Enter your password">
+            <div class="modal-buttons">
+                <button id="modalCancel" class="modal-cancel">Cancel</button>
+                <button id="modalConfirm" class="modal-confirm">Add</button>
             </div>
-            <button type="submit" class="login-btn">Login / Join</button>
-        </form>
-         <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
-             Don't have an account?
-             <a href="#" id="openRegister" style="color:#128c7e;text-decoration:none;font-weight:600">Register</a>
-         </div>
-    </div>
-</div>
-
- <!-- Register Page -->
- <div id="registerPage" class="login-page" style="display:none">
-     <div class="login-container">
-         <div class="login-header">
-             <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
-             <h1>Create your account</h1>
-             <p>Please enter your details to register</p>
-         </div>
-         <form id="registerForm" class="login-form">
-             <div class="form-group">
-                 <label for="regUsername">Username</label>
-                 <input type="text" id="regUsername" placeholder="Choose a username" required>
-             </div>
-             <div class="form-group">
-                 <label for="regPassword">Password</label>
-                 <input type="password" id="regPassword" placeholder="Choose a password" required>
-             </div>
-             <div class="form-group">
-                 <label for="regConfirm">Confirm Password</label>
-                 <input type="password" id="regConfirm" placeholder="Re-enter password" required>
-             </div>
-             <button type="submit" class="login-btn">Register</button>
-         </form>
-         <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
-             Already have an account?
-             <a href="#" id="openLogin" style="color:#128c7e;text-decoration:none;font-weight:600">Login</a>
-         </div>
-     </div>
- </div>
- 
-<div id="notification-container"></div>
-
-<!-- Member Add Modal -->
-<div id="memberModal" class="modal">
-    <div class="modal-content">
-        <h3 id="modalTitle">Add Member</h3>
-        <div id="selectedMembers" class="selected-members"></div>
-        <div class="form-group">
-            <label for="modalInput" id="modalLabel">Username:</label>
-            <input type="text" id="modalInput" list="user-list" autocomplete="off" placeholder="Type username and press enter">
-            <datalist id="user-list"></datalist>
-        </div>
-        <div class="modal-buttons">
-            <button id="modalCancel" class="modal-cancel">Cancel</button>
-            <button id="modalConfirm" class="modal-confirm">Add</button>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-<script src="js/socket.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/socket.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
 
 </body>
+
 </html>

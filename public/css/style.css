@@ -430,7 +430,7 @@ body {
     flex: 1;
     padding: 25px;
     overflow-y: auto;
-    display: flex;
+    /* display: flex; */
     flex-direction: column;
     background-color: #292826;
     background-image: linear-gradient(rgba(41, 40, 38, 0.8), rgba(41, 40, 38, 0.8)), url('https://camo.githubusercontent.com/c42c83df2fd1e442ef1e0ed69cc20d21f65308fc2f0dca2a8035360738d49c8c/68747470733a2f2f7765622e77686174736170702e636f6d2f696d672f62672d636861742d74696c652d6461726b5f61346265353132653731393562366237333364393131306234303866303735642e706e67');
@@ -439,7 +439,7 @@ body {
 }
 
 .message {
-    max-width: 70%;
+    max-width: 50%;
     padding: 10px 15px;
     margin-bottom: 10px;
     border-radius: 12px;
@@ -447,6 +447,8 @@ body {
     z-index: 2;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     animation: messagePop 0.3s ease-out;
+    overflow: hidden;
+    overflow-wrap: break-word;
 }
 
 @keyframes messagePop {
@@ -462,19 +464,150 @@ body {
 }
 
 .message.sent {
+    width: fit-content;
     background: #dcf8c6;
-    align-self: flex-end;
+    /* align-self: flex-end; */
+    max-width: 50%;
+    min-width: 30px;
+    margin-left: auto;
 }
 
 .message.received {
     background: white;
     align-self: flex-start;
+    width: fit-content;
 }
 
 .message.ai-message {
     background: #e8f0fe;
     border-left: 4px solid #4285f4;
     align-self: flex-start;
+    max-width: 85%; /* Increased from 260px to allow space for code */
+}
+
+/* Code Block Styling */
+.code-block-container {
+    margin: 10px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    border: 1px solid #333;
+}
+
+.code-block-header {
+    background: #2d2d2d;
+    color: #aaa;
+    padding: 6px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+.code-lang {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.copy-code-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ccc;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.copy-code-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.copy-code-btn.copied {
+    background: #25d366;
+    color: white;
+    border-color: #25d366;
+}
+
+.terminal-style {
+    margin: 0;
+    padding: 15px;
+    background: #000; /* Black background like terminal */
+    color: #f8f8f8;
+    overflow-x: auto;
+    line-height: 1.5;
+}
+
+/* Only apply terminal-style (black background) when language is present */
+.code-block-container:not(.has-lang) .terminal-style {
+    background: #f4f4f4; /* Light gray for no-language code blocks */
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.code-block-container.has-lang .terminal-style {
+    background: #000; /* Pure black for terminal style when language specified */
+    color: #f8f8f8;
+}
+
+.code-block-container:not(.has-lang) .code-block-header {
+    background: #eee;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+}
+
+.code-block-container:not(.has-lang) .copy-code-btn {
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #666;
+}
+
+.code-block-container:not(.has-lang) .copy-code-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.terminal-style code {
+    background: transparent !important;
+    padding: 0 !important;
+    color: inherit !important;
+    font-family: inherit !important;
+}
+
+/* Adjust message content for markdown */
+.message-content p {
+    margin: 0 0 10px 0;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content ul, .message-content ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.message-content li {
+    margin-bottom: 5px;
+}
+
+/* AI Sidebar code adjustments */
+.ai-messages .message {
+    max-width: 90% !important;
+}
+
+.ai-messages .code-block-container {
+    width: 100%;
 }
 
 .message.received div,
@@ -571,7 +704,7 @@ body {
     border-radius: 50%;
     width: 28px;
     height: 28px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -594,6 +727,85 @@ body {
 .message.sent:hover .reply-btn {
     opacity: 1;
     left: -45px;
+}
+
+/* Message Copy Button */
+.msg-copy-btn {
+    opacity: 0;
+    position: absolute;
+    right: -35px;
+    top: 50%;
+    /* Standard offset for received messages */
+    transform: translateY(-50%);
+    background: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    z-index: 10;
+    font-size: 14px;
+}
+
+/* Adjust position if both reply and copy buttons exist */
+.message.ai-message:hover .msg-copy-btn {
+    opacity: 1;
+    right: -78px; /* Offset to not overlap with reply button at -45px */
+}
+
+.message.sent.ai-message .msg-copy-btn {
+    left: -35px;
+    right: auto;
+}
+
+.message.sent.ai-message:hover .msg-copy-btn {
+    opacity: 1;
+    left: 45px; /* Offset to not overlap with reply button at -45px */
+}
+
+.msg-copy-btn:hover {
+    background: #f0f2f5;
+    color: #25d366;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.msg-copy-btn.copied {
+    background: #25d366;
+    color: white;
+}
+
+/* AI Sidebar specific adjustments for copy button */
+.ai-sidebar .message {
+    position: relative;
+    /* padding-right: 35px; */
+}
+
+.ai-sidebar .msg-copy-btn {
+    opacity: 0;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    transform: none;
+    background: rgba(0, 0, 0, 0.05);
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+}
+
+.ai-sidebar .message:hover .msg-copy-btn {
+    opacity: 1;
+    right: 8px;
+}
+
+.ai-sidebar .msg-copy-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
 }
 
 .input-area {
@@ -656,15 +868,49 @@ body {
 }
 
 .file-message img {
-    width: 100%;
-    max-width: 320px;
-    max-height: 240px;
+    max-width: 100%;
+    max-height: 400px;
     height: auto;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
     border-radius: 8px;
-    margin-top: 5px;
+    margin-top: 8px;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+}
+
+.file-message img:hover {
+    transform: scale(1.01);
+}
+
+.message-image-container {
+    margin: 8px 0;
+    max-width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.message.sent .message-image-container {
+    justify-content: flex-end;
+}
+
+.message-image {
+    max-width: 100%;
+    max-height: 400px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+    display: block;
+}
+
+.message-image:hover {
+    transform: scale(1.01);
 }
 
 .file-message a {
@@ -779,9 +1025,20 @@ body {
 }
 
 @keyframes pulseIcon {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .ai-sidebar {
@@ -804,23 +1061,47 @@ body {
 }
 
 .ai-sidebar-header {
-    padding: 20px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+    background: #4a6764;
+    color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    white-space: nowrap;
-    /* min-width: 380px; */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.ai-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.new-chat-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.new-chat-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
 }
 
 .ai-sidebar-header h3 {
     margin: 0;
-    font-size: 20px;
-    color: #333;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .ai-sidebar-header .ai-icon svg {
@@ -842,9 +1123,19 @@ body {
 }
 
 @keyframes thinkingDot {
-    0%, 20% { opacity: 0.2; }
-    50% { opacity: 1; }
-    100% { opacity: 0.2; }
+
+    0%,
+    20% {
+        opacity: 0.2;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.2;
+    }
 }
 
 .close-btn {
@@ -852,14 +1143,14 @@ body {
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #888;
+    color: #1c1919;
 }
 
 .ai-messages {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    display: flex;
+    /* display: flex; */
     flex-direction: column;
     background: #2f2c2c;
     /* min-width: 380px; */
@@ -904,6 +1195,61 @@ body {
 
 .ai-input-area button:hover {
     background: #3367d6;
+}
+
+.ai-image-preview {
+    padding: 10px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ai-image-preview img {
+    max-height: 80px;
+    max-width: 100px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+.ai-image-preview .remove-img-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    margin-left: 5px;
+}
+
+.ai-image-preview .remove-img-btn:hover {
+    background: #c0392b;
+}
+
+.ai-input-area .ai-upload-btn {
+    background: #f8f9fa;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    /* padding: 10px; */
+    font-size: 18px;
+    /* margin-right: 8px; */
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.ai-input-area .ai-upload-btn:hover {
+    background: #e4e6eb;
+    border-color: #4285f4;
 }
 
 .modal-buttons {
@@ -1043,4 +1389,169 @@ body {
     background: #1ebe57;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+}
+
+/* Emoji Picker Modal */
+.emoji-picker-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+
+.emoji-picker-content {
+    background: white;
+    border-radius: 20px;
+    width: 320px;
+    max-height: 400px;
+    overflow: hidden;
+    animation: modalSlide 0.3s ease-out;
+}
+
+.emoji-picker-header {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: #333;
+}
+
+.emoji-picker-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+}
+
+.emoji-picker-close:hover {
+    color: #333;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    padding: 15px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.emoji-grid button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.emoji-grid button:hover {
+    background: #f0f2f5;
+    transform: scale(1.2);
+}
+
+/* Message Reactions */
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.reaction-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f0f2f5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.reaction-badge:hover {
+    background: #e4e6eb;
+    border-color: #ddd;
+}
+
+.reaction-badge.my-reaction {
+    background: #e1f5fe;
+    border-color: #81d4fa;
+}
+
+.reaction-emoji {
+    font-size: 16px;
+}
+
+.reaction-count {
+    font-weight: 600;
+    color: #555;
+}
+
+.reaction-badge.my-reaction .reaction-count {
+    color: #0288d1;
+}
+
+.reaction-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.reaction-badge:hover .reaction-tooltip {
+    opacity: 1;
+}
+
+/* Reaction Button on Message */
+.reaction-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.message:hover .reaction-btn {
+    opacity: 1;
+}
+
+.reaction-btn:hover {
+    background: #f0f2f5;
+    transform: scale(1.2);
 }

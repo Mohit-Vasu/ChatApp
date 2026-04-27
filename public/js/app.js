@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Request browser notification permission
     requestNotificationPermission();
 
-    let current = { type: null, id: null };
+    window.current = { type: null, id: null };
     let users = [];
     let replyingToMessage = null;
 
@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingAuth = null;
 
     function doAuthenticate(user, pass) {
-        console.log("check event >>>>>>>>>>>>>>>>>>>>>>");
-        
+        // console.log("check event >>>>>>>>>>>>>>>>>>>>>>");
+
         if (socket.connected) {
             socket.emit('authenticate', { username: user, password: pass });
         } else {
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             password = storedPassword;
             console.log('Auto-login for:', username);
             doAuthenticate(username, password);
-            
+
             // Show app, hide login
             document.getElementById('loginPage').style.display = 'none';
             document.querySelector('.app').style.display = 'flex';
@@ -64,18 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle login form submission
     document.getElementById('loginForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        
+
         const user = document.getElementById('loginUsername').value.trim();
         const pass = document.getElementById('loginPassword').value;
-        
+
         if (!user) {
             alert('Please enter a username');
             return;
         }
-        
+
         username = user;
         password = pass || '';
-        
+
         doAuthenticate(username, password);
     });
 
@@ -135,14 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.username = username;
         localStorage.setItem('username', username);
         localStorage.setItem('password', password || ''); // Save password for auto-login
-        
+
         // Update both sidebar (if still used) and top-nav username
         const userDisplay = document.getElementById('currentUser');
         if (userDisplay) userDisplay.textContent = 'Logged in as: ' + username;
         
         const userNavDisplay = document.getElementById('currentUserNav');
         if (userNavDisplay) userNavDisplay.textContent = username;
-        
+
         const userAvatar = document.getElementById('userAvatar');
         const headerAvatar = document.getElementById('headerAvatar');
         const headerName = document.getElementById('headerName');
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (headerAvatar) headerAvatar.textContent = initial;
             if (headerName) headerName.textContent = username;
         }
-        
+
         // Hide login page, show app
         document.getElementById('loginPage').style.display = 'none';
         document.querySelector('.app').style.display = 'flex';
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('group deleted', (groupId) => {
-        if (current.type === 'group' && current.id === groupId) {
+        if (window.current.type === 'group' && window.current.id === groupId) {
             current = { type: null, id: null };
             toggleChat(false);
             document.getElementById('messages').innerHTML = '';
@@ -266,12 +266,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('user deleted', (deletedUsername) => {
         // If current private chat was with this user, clear it
-        if (current.type === 'private' && current.id === deletedUsername) {
+        if (window.current.type === 'private' && window.current.id === deletedUsername) {
             current = { type: null, id: null };
             toggleChat(false);
             document.getElementById('messages').innerHTML = '';
         }
-        
+
         // Remove from local users list
         users = users.filter(u => u.username !== deletedUsername);
         renderUsers(users);
@@ -280,10 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('group list', (groups) => {
         window.currentGroups = groups;
         renderGroups(groups);
-        
+
         // Refresh header if current chat is a group
-        if (current.type === 'group' && groups[current.id]) {
-            const g = groups[current.id];
+        if (window.current.type === 'group' && groups[window.current.id]) {
+            const g = groups[window.current.id];
             const memberCount = g.members ? g.members.length : 0;
             const membersList = g.members ? g.members.join(', ') : '';
             const creatorInfo = g.creator ? ` | Admin: ${g.creator}` : '';
@@ -293,16 +293,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('private history', messages => {
-        const key = 'private_' + [username, current.id].sort().join('-');
+        const key = 'private_' + [username, window.current.id].sort().join('-');
         chatHistory[key] = messages;
         localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-        if (current.type === 'private') {
+        if (window.current.type === 'private') {
             loadMessages();
         }
     });
 
     socket.on('group history', serverMessages => {
-        const key = 'group_' + current.id;
+        const key = 'group_' + window.current.id;
 
         // Merge server history with local history (to avoid duplicates)
         const localMessages = chatHistory[key] || [];
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chatHistory[key] = localMessages;
         localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-        if (current.type === 'group') {
+        if (window.current.type === 'group') {
             loadMessages();
         }
     });
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const roomKey = getPrivateRoomKey(msg);
         const isForMe = msg.to && currentUsername && msg.to.toLowerCase() === currentUsername.toLowerCase();
         const isFromMe = msg.from && currentUsername && msg.from.toLowerCase() === currentUsername.toLowerCase();
-        const isCurrentlyChatting = current.type === 'private' && current.id === msg.from;
+        const isCurrentlyChatting = window.current.type === 'private' && window.current.id === msg.from;
 
         console.log('isForMe:', isForMe, 'isFromMe:', isFromMe, 'isCurrentlyChatting:', isCurrentlyChatting);
 
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        if (current.type === 'private' && (current.id === msg.from || current.id === msg.to)) {
+        if (window.current.type === 'private' && (window.current.id === msg.from || window.current.id === msg.to)) {
             addMessage(msg, isFromMe);
         }
     });
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Group message received:', msg, 'My username:', currentUsername);
 
         const roomKey = 'group_' + msg.groupId;
-        const isCurrentlyViewing = current.type === 'group' && current.id === msg.groupId;
+        const isCurrentlyViewing = window.current.type === 'group' && window.current.id === msg.groupId;
         const isFromMe = msg.from && currentUsername && msg.from.toLowerCase() === currentUsername.toLowerCase();
 
         saveMessage(roomKey, msg);
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 () => {
                     window.notifications[msg.groupId] = 0; // Clear notification on click
                     saveNotifications();
-                    
+
                     const groupEl = document.querySelector('[data-group-id="' + msg.groupId + '"]');
                     let members = [];
                     if (groupEl && groupEl.dataset.members) {
@@ -433,13 +433,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Emit typing events while user types
     input.addEventListener('input', () => {
         // resizeMessageBox();
-        if (!current.type || !current.id) return;
+        if (!window.current.type || !window.current.id) return;
         if (!typingState.active) {
             typingState.active = true;
-            if (current.type === 'private') {
-                socket.emit('typing private', { to: current.id, isTyping: true });
+            if (window.current.type === 'private') {
+                socket.emit('typing private', { to: window.current.id, isTyping: true });
             } else {
-                socket.emit('typing group', { groupId: current.id, isTyping: true });
+                socket.emit('typing group', { groupId: window.current.id, isTyping: true });
             }
         }
         if (typingState.timeoutId) clearTimeout(typingState.timeoutId);
@@ -451,11 +451,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function stopTyping() {
         if (!typingState.active) return;
         typingState.active = false;
-        if (!current.type || !current.id) return;
-        if (current.type === 'private') {
-            socket.emit('typing private', { to: current.id, isTyping: false });
+        if (!window.current.type || !window.current.id) return;
+        if (window.current.type === 'private') {
+            socket.emit('typing private', { to: window.current.id, isTyping: false });
         } else {
-            socket.emit('typing group', { groupId: current.id, isTyping: false });
+            socket.emit('typing group', { groupId: window.current.id, isTyping: false });
         }
     }
 
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('typing private', ({ from, isTyping }) => {
         const currentUsername = username || window.username || localStorage.getItem('username') || '';
         if (!from || from.toLowerCase() === (currentUsername || '').toLowerCase()) return;
-        if (current.type === 'private' && current.id === from) {
+        if (window.current.type === 'private' && window.current.id === from) {
             updateTypingIndicator(isTyping ? `${from} is typing…` : '');
         }
     });
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('typing group', ({ groupId, from, isTyping }) => {
         const currentUsername = username || window.username || localStorage.getItem('username') || '';
         if (!from || from.toLowerCase() === (currentUsername || '').toLowerCase()) return;
-        if (current.type !== 'group' || current.id !== groupId) return;
+        if (window.current.type !== 'group' || window.current.id !== groupId) return;
         if (isTyping) {
             typingState.groupTypers.add(from);
         } else {
@@ -576,11 +576,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ✅ SEND
     window.send = async function (fileData = null, textOverride = null) {
         let text = textOverride !== null ? String(textOverride).trim() : input.value.trim();
-        
+
         // If there's no text and no file, do nothing
         if (!text && !fileData) return;
 
-        if (!current.type) {
+        if (!window.current.type) {
             alert('Select chat first');
             return;
         }
@@ -602,11 +602,11 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        if (current.type === 'private') {
-            payload.to = current.id;
+        if (window.current.type === 'private') {
+            payload.to = window.current.id;
             socket.emit('private message', payload);
         } else {
-            payload.groupId = current.id;
+            payload.groupId = window.current.id;
             socket.emit('group message', payload);
         }
 
@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!current.type) {
+            if (!window.current.type) {
                 alert('Select chat first');
                 fileInput.value = '';
                 return;
@@ -705,11 +705,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getRoomKey() {
-        if (current.type === 'private') {
-            return 'private_' + [username, current.id].sort().join('-');
+        if (window.current.type === 'private') {
+            return 'private_' + [username, window.current.id].sort().join('-');
         }
-        if (current.type === 'group') {
-            return 'group_' + current.id;
+        if (window.current.type === 'group') {
+            return 'group_' + window.current.id;
         }
     }
 
@@ -730,7 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedMemberNames = new Set();
     let isMultiSelect = false;
 
-    window.showModal = function(title, label, buttonText, callback, multi = false) {
+    window.showModal = function (title, label, buttonText, callback, multi = false) {
         modalTitle.textContent = title;
         modalLabel.textContent = label;
         modalInput.value = '';
@@ -753,7 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span>${name}</span>
             <span class="remove-chip">&times;</span>
         `;
-        
+
         chip.querySelector('.remove-chip').onclick = () => {
             selectedMemberNames.delete(name);
             chip.remove();
@@ -843,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle group deleted
     socket.on('group deleted', (groupId) => {
         // Clear chat history if viewing deleted group
-        if (current.type === 'group' && current.id === groupId) {
+        if (window.current.type === 'group' && window.current.id === groupId) {
             current = { type: null, id: null };
             document.getElementById('chatTitle').textContent = 'Select a chat';
             document.getElementById('messages').innerHTML = '';
@@ -887,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('pending users list', (pendingUsers) => {
         const container = document.getElementById('pendingUsers');
         if (!container) return;
-        
+
         container.innerHTML = '';
         if (pendingUsers.length === 0) {
             container.innerHTML = '<div style="padding: 10px; font-size: 12px; opacity: 0.6;">No pending approvals</div>';
@@ -936,13 +936,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Automatically clear notifications for current chat when window is focused
     window.addEventListener('focus', () => {
-        if (current.id) {
-            console.log('Window focused, clearing notifications for:', current.id);
-            window.notifications[current.id] = 0;
+        if (window.current.id) {
+            console.log('Window focused, clearing notifications for:', window.current.id);
+            window.notifications[window.current.id] = 0;
             saveNotifications();
-            if (current.type === 'private') {
+            if (window.current.type === 'private') {
                 renderUsers(users);
-            } else if (current.type === 'group') {
+            } else if (window.current.type === 'group') {
                 renderGroups(window.currentGroups || {});
             }
         }
@@ -953,14 +953,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiSidebar = document.getElementById('aiSidebar');
     const aiToggleBtn = document.getElementById('aiToggleBtn');
     const closeAiSidebar = document.getElementById('closeAiSidebar');
+    const newAiChatBtn = document.getElementById('newAiChatBtn');
     const aiMsgInput = document.getElementById('aiMsgInput');
     const sendAiBtn = document.getElementById('sendAiBtn');
     const aiMessages = document.getElementById('aiMessages');
+    const aiImageInput = document.getElementById('aiImageInput');
+    const aiUploadBtn = document.getElementById('aiUploadBtn');
+    const aiImagePreview = document.getElementById('aiImagePreview');
+    const aiPreviewImg = document.getElementById('aiPreviewImg');
+    const aiRemoveImg = document.getElementById('aiRemoveImg');
+
+    // Store current AI chat session ID
+    let currentAiChatId = null;
+
+    // Store selected image for AI upload
+    let aiSelectedImage = null;
+
+    // AI Image Upload Handlers
+    aiUploadBtn.addEventListener('click', () => {
+        aiImageInput.click();
+    });
+
+    aiImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                aiSelectedImage = {
+                    data: event.target.result,
+                    mimeType: file.type
+                };
+                aiPreviewImg.src = event.target.result;
+                aiImagePreview.style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    aiRemoveImg.addEventListener('click', () => {
+        aiSelectedImage = null;
+        aiImagePreview.style.display = 'none';
+        aiPreviewImg.src = '';
+        aiImageInput.value = '';
+    });
 
     aiToggleBtn.addEventListener('click', () => {
         aiSidebar.classList.toggle('open');
         if (aiSidebar.classList.contains('open')) {
             aiMsgInput.focus();
+            // Load history when opening if no chat is active
+            if (!currentAiChatId) {
+                socket.emit('get ai history');
+            }
+        }
+    });
+
+    newAiChatBtn.addEventListener('click', () => {
+        if (confirm('Start a new AI conversation? Current history will be saved.')) {
+            socket.emit('new ai chat');
+        }
+    });
+
+    socket.on('ai chat created', (data) => {
+        currentAiChatId = data.chatId;
+        aiMessages.innerHTML = '';
+        const welcomeMsg = "Started a new chat session. How can I help you today?";
+        addAiMessageToSidebar(welcomeMsg, false);
+    });
+
+    socket.on('ai history', (data) => {
+        currentAiChatId = data.chatId;
+        aiMessages.innerHTML = '';
+        
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(msg => {
+                addAiMessageToSidebar(msg.text, msg.role === 'user', msg.image?.data);
+            });
+        } else {
+            const welcomeMsg = "Hello! I'm your AI assistant. How can I help you today?";
+            addAiMessageToSidebar(welcomeMsg, false);
         }
     });
 
@@ -968,13 +1039,13 @@ document.addEventListener('DOMContentLoaded', () => {
         aiSidebar.classList.remove('open');
     });
 
-    function addAiMessageToSidebar(text, isUser = false) {
+    function addAiMessageToSidebar(text, isUser = false, imageData = null) {
         const div = document.createElement('div');
         div.className = `message ${isUser ? 'sent' : 'received ai-message'}`;
-        
+
         const header = document.createElement('span');
         header.className = 'message-header';
-        
+
         if (!isUser) {
             header.innerHTML = `
                 <span class="ai-icon-mini">
@@ -987,23 +1058,121 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             header.textContent = 'You';
         }
-        
+
         const content = document.createElement('div');
         content.className = 'message-content';
-        content.textContent = text;
-        
+
+        // Add image if provided
+        if (imageData) {
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'message-image-container';
+            const img = document.createElement('img');
+            img.src = imageData;
+            img.className = 'message-image chat-image clickable-image';
+            img.onclick = () => {
+                if (window.openImageModal) window.openImageModal(imageData);
+            };
+            imgContainer.appendChild(img);
+            content.appendChild(imgContainer);
+        }
+
+        const textSpan = document.createElement('span');
+        if (typeof renderMessageContent === 'function') {
+            textSpan.innerHTML = renderMessageContent(text);
+        } else {
+            textSpan.textContent = text;
+        }
+        content.appendChild(textSpan);
+
+        // Add copy button for AI sidebar messages
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'msg-copy-btn';
+        copyBtn.innerHTML = '📋';
+        copyBtn.title = 'Copy message';
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (window.copyMessageText) {
+                window.copyMessageText(copyBtn, text);
+            } else {
+                navigator.clipboard.writeText(text);
+            }
+        };
+        div.appendChild(copyBtn);
+
         div.appendChild(header);
         div.appendChild(content);
         aiMessages.appendChild(div);
         aiMessages.scrollTop = aiMessages.scrollHeight;
     }
 
+    function setAiInputState(isLoading) {
+        aiMsgInput.disabled = isLoading;
+        sendAiBtn.disabled = isLoading;
+        aiUploadBtn.disabled = isLoading;
+        if (isLoading) {
+            sendAiBtn.style.opacity = '0.5';
+            sendAiBtn.style.cursor = 'not-allowed';
+            aiMsgInput.placeholder = 'AI is thinking...';
+        } else {
+            sendAiBtn.style.opacity = '1';
+            sendAiBtn.style.cursor = 'pointer';
+            aiMsgInput.placeholder = 'Ask AI anything...';
+            aiMsgInput.focus();
+        }
+    }
+
+    function validateAiInput(text, image) {
+        if (!text && !image) return false;
+        
+        // If there's an image, we allow empty or short text
+        if (image) return true;
+
+        const trimmedText = text.trim();
+        
+        // 1. Minimum length check
+        if (trimmedText.length < 2) {
+            alert('Please enter a more descriptive message.');
+            return false;
+        }
+
+        // 2. Gibberish check: Check for extremely long words (e.g., > 40 chars) 
+        // that are likely keyboard mashing, unless it's a URL or specific pattern
+        const words = trimmedText.split(/\s+/);
+        const hasTooLongWord = words.some(word => word.length > 40 && !word.startsWith('http'));
+        
+        if (hasTooLongWord) {
+            alert('Your message contains words that are too long. Please use clear language.');
+            return false;
+        }
+
+        // 3. Repetitive character check (e.g., "aaaaaaa")
+        if (/(.)\1{10,}/.test(trimmedText)) {
+            alert('Please avoid repetitive characters.');
+            return false;
+        }
+
+        return true;
+    }
+
     sendAiBtn.addEventListener('click', () => {
         const text = aiMsgInput.value.trim();
-        if (!text) return;
+        
+        if (sendAiBtn.disabled) return;
+        if (!validateAiInput(text, aiSelectedImage)) return;
 
-        addAiMessageToSidebar(text, true);
+        // Set loading state
+        setAiInputState(true);
+
+        // Add user message to sidebar with image if present
+        const imageToSend = aiSelectedImage;
+        addAiMessageToSidebar(text, true, imageToSend ? imageToSend.data : null);
         aiMsgInput.value = '';
+
+        // Clear image preview
+        aiSelectedImage = null;
+        aiImagePreview.style.display = 'none';
+        aiPreviewImg.src = '';
+        aiImageInput.value = '';
 
         // Add a loading indicator from AI
         const loadingDiv = document.createElement('div');
@@ -1019,13 +1188,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 AI Assistant
             </span>
             <div class="message-content">
-                <span class="thinking-dots">Thinking...</span>
+                <span class="thinking-dots">${imageToSend ? 'Analyzing image...' : 'Thinking...'}</span>
             </div>
         `;
         aiMessages.appendChild(loadingDiv);
         aiMessages.scrollTop = aiMessages.scrollHeight;
 
-        socket.emit('ai message', text);
+        // Send message with optional image
+        const payload = { 
+            text, 
+            chatId: currentAiChatId,
+            image: imageToSend 
+        };
+        socket.emit('ai message', payload);
     });
 
     aiMsgInput.addEventListener('keypress', (e) => {
@@ -1038,8 +1213,45 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('ai response', (data) => {
         const loadingDiv = document.getElementById('aiLoading');
         if (loadingDiv) loadingDiv.remove();
-        
+
+        setAiInputState(false);
         addAiMessageToSidebar(data.text, false);
+    });
+
+    socket.on('reaction update', (data) => {
+        const { chatType, chatId, messageId, reactions } = data;
+        const currentRoomKey = getRoomKey();
+
+        if (currentRoomKey === (chatType === 'group' ? `group_${chatId}` : chatId)) {
+            updateMessageReactions(data);
+
+            if (chatHistory[currentRoomKey]) {
+                const msgObj = chatHistory[currentRoomKey].find(m =>
+                    (m.messageId || `${m.from}-${m.time}`) === messageId
+                );
+                if (msgObj) {
+                    msgObj.reactions = reactions;
+                }
+            }
+        }
+    });
+
+    socket.on('remove reaction update', (data) => {
+        const { chatType, chatId, messageId, reactions } = data;
+        const currentRoomKey = getRoomKey();
+
+        if (currentRoomKey === (chatType === 'group' ? `group_${chatId}` : chatId)) {
+            updateMessageReactions(data);
+
+            if (chatHistory[currentRoomKey]) {
+                const msgObj = chatHistory[currentRoomKey].find(m =>
+                    (m.messageId || `${m.from}-${m.time}`) === messageId
+                );
+                if (msgObj) {
+                    msgObj.reactions = reactions;
+                }
+            }
+        }
     });
 
 });

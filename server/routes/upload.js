@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const path = require('path');
 const { PendingDeletion } = require('../db');
 
 const router = express.Router();
@@ -24,8 +25,24 @@ const upload = multer({
 
 function uploadToCloudinary(file) {
   return new Promise((resolve, reject) => {
+    // Determine resource type and ensure extension is preserved
+    const isImage = file.mimetype.startsWith('image/');
+    const resource_type = isImage ? 'image' : 'raw';
+
+    // Use a folder-based public_id to preserve the actual filename at the end of the URL
+    const sanitizedName = file.originalname.replace(/[/\\?%*:|"<>]/g, '_');
+    const publicId = `chat_uploads/${Date.now()}/${sanitizedName}`;
+
     const uploadStream = cloudinary.uploader.upload_stream(
-      { resource_type: 'auto' },
+      {
+        resource_type,
+        public_id: publicId,
+        filename: file.originalname, // Explicitly set the filename in metadata
+        use_filename: true,
+        unique_filename: false, // We use Date.now() in the folder name for uniqueness
+        // Also keep content_disposition for extra reliability
+        content_disposition: `attachment; filename="${file.originalname.replace(/"/g, '\\"')}"`
+      },
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
@@ -66,7 +83,7 @@ router.post(
                 { $setOnInsert: { publicId: result.public_id, resourceType: result.resource_type, deleteAt } },
                 { upsert: true, returnDocument: 'after' }
               );
-            } catch (e) {}
+            } catch (e) { }
           }
 
           return {

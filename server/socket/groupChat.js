@@ -1,6 +1,5 @@
 const { Group, User } = require('../db');
 const { users } = require('./users');
-const { getAiResponse } = require('../ai');
 
 let groups = {};
 
@@ -61,11 +60,11 @@ module.exports = (io, socket) => {
             await newGroup.save();
 
             // Update memory cache
-            groups[id] = { 
-                name, 
-                creator: user.username, 
-                members: uniqueMembers, 
-                messages: [] 
+            groups[id] = {
+                name,
+                creator: user.username,
+                members: uniqueMembers,
+                messages: []
             };
 
             // Join all online members to the group room
@@ -111,6 +110,7 @@ module.exports = (io, socket) => {
 
             const groupName = group.name || 'Unknown Group';
             const message = {
+                messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 text,
                 fileUrl,
                 fileName,
@@ -199,8 +199,8 @@ module.exports = (io, socket) => {
 
             // Filter groups - only show where user is a member, or show all for Alpha
             const userGroups = {};
-            const finalGroups = (user.username === 'Alpha') 
-                ? await Group.find({}) 
+            const finalGroups = (user.username === 'Alpha')
+                ? await Group.find({})
                 : await Group.find({ members: user.username });
 
             finalGroups.forEach(g => {
@@ -257,31 +257,105 @@ module.exports = (io, socket) => {
                 groups[groupId].members.push(usernameToAdd);
             }
 
-            // Join the new member's socket to the room if they are online
-            if (targetUser.online && targetUser.socketId) {
-                io.sockets.sockets.get(targetUser.socketId)?.join(groupId);
-            }
+            // Notify everyone in the group room about the update
+            io.to(groupId).emit('group list updated');
 
-            // Refresh group list for everyone to show updated member count
-            const allMembers = group.members;
-            for (const member of allMembers) {
-                const memberUser = await User.findOne({ username: member });
-                if (memberUser?.online && memberUser.socketId) {
-                    const memberGroups = {};
-                    const dbMemberGroups = await Group.find({ members: member });
-                    dbMemberGroups.forEach(g => {
-                        memberGroups[g.groupId] = {
+            // Specifically send the new group list to the added user if online
+            if (targetUser.online && targetUser.socketId) {
+                const addedUserSocket = io.sockets.sockets.get(targetUser.socketId);
+                if (addedUserSocket) {
+                    addedUserSocket.join(groupId);
+
+                    // Filter groups for the added user
+                    const allGroups = await Group.find({ members: usernameToAdd });
+                    const userGroups = {};
+                    allGroups.forEach(g => {
+                        userGroups[g.groupId] = {
                             name: g.name,
                             creator: g.creator,
                             members: g.members,
                             messages: g.messages
                         };
                     });
-                    io.to(memberUser.socketId).emit('group list', memberGroups);
+                    addedUserSocket.emit('group list', userGroups);
                 }
             }
         } catch (e) {
             console.error('Add member error:', e);
+        }
+    });
+
+    socket.on('add reaction', async ({ chatType, chatId, messageId, emoji, username }) => {
+        if (chatType !== 'group') return;
+        try {
+            const user = await User.findOne({ socketId: socket.id });
+            if (!user) return;
+
+            const group = await Group.findOne({ groupId: chatId });
+            if (!group) return;
+
+            // Use the username from the payload or fall back to the authenticated user
+            const reactionUsername = username || user.username;
+
+            const groupToUpdate = await Group.findOne({ groupId: chatId });
+            if (!groupToUpdate) return;
+
+            const message = groupToUpdate.messages.find(m => (m.messageId || `${m.from}-${m.time}`) === messageId);
+            if (!message) return;
+
+            if (!message.reactions) message.reactions = new Map();
+
+            let reactionsForEmoji = message.reactions.get(emoji) || [];
+            if (!reactionsForEmoji.some(r => r.username === reactionUsername)) {
+                reactionsForEmoji.push({
+                    username: reactionUsername,
+                    emoji,
+                    timestamp: new Date().toISOString()
+                });
+                message.reactions.set(emoji, reactionsForEmoji);
+                await groupToUpdate.save();
+            }
+
+            io.to(chatId).emit('reaction update', {
+                chatType: 'group',
+                chatId,
+                messageId,
+                reactions: Object.fromEntries(message.reactions)
+            });
+        } catch (e) {
+            console.error('Add reaction error (group):', e);
+        }
+    });
+
+    socket.on('remove reaction', async ({ chatType, chatId, messageId, emoji }) => {
+        if (chatType !== 'group') return;
+        try {
+            const user = await User.findOne({ socketId: socket.id });
+            if (!user) return;
+
+            const group = await Group.findOne({ groupId: chatId });
+            if (!group) return;
+
+            const message = group.messages.find(m => (m.messageId || `${m.from}-${m.time}`) === messageId);
+            if (!message || !message.reactions) return;
+
+            let reactionsForEmoji = message.reactions.get(emoji);
+            if (reactionsForEmoji) {
+                message.reactions.set(emoji, reactionsForEmoji.filter(r => r.username !== user.username));
+                if (message.reactions.get(emoji).length === 0) {
+                    message.reactions.delete(emoji);
+                }
+                await group.save();
+            }
+
+            io.to(chatId).emit('remove reaction update', {
+                chatType: 'group',
+                chatId,
+                messageId,
+                reactions: Object.fromEntries(message.reactions)
+            });
+        } catch (e) {
+            console.error('Remove reaction error (group):', e);
         }
     });
 

@@ -1,57 +1,71 @@
-const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 /**
- * Calls the AI API with the provided user input.
- * @param {string} userInput - The message from the user.
- * @returns {Promise<string>} - The AI's response text.
+ * @param {string} userInput - The message from the user
+ * @param {Array} history - The chat history array (must be managed by your app state/DB)
+ * @param {Object} image - Optional: { data: "base64...", mimeType: "image/jpeg" }
+ * @param {number} retryCount - Internal counter for retries
  */
-async function getAiResponse(userInput) {
+async function getAiResponse(userInput, history = [], image = null, retryCount = 0) {
     try {
-        const response = await axios.post('https://api.openai.com/v1/responses', {
-            model: "gpt-5-nano",
-            input: `Please respond in English: ${userInput}`,
-            store: true
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-            }
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-3.1-flash-lite-preview", 
+            systemInstruction: `You are an advanced AI Chat Agent integrated into a real-time messaging application. 
+            Your goals:
+            1. Be helpful, professional yet friendly, and witty when appropriate.
+            2. Provide concise and accurate answers.
+            3. If an image is provided, analyze it thoroughly and answer questions about it.
+            4. You can help with coding, general knowledge, and daily tasks.
+            5. Since you are in a chat app, keep your responses formatted for readability (use markdown).
+            6. Remember the context of the conversation from the history provided.`
         });
-        
-        // Handle the specific JSON structure provided by the user
-        if (response.data.output && Array.isArray(response.data.output)) {
-            for (const outputItem of response.data.output) {
-                if (outputItem.type === 'message' && outputItem.content && Array.isArray(outputItem.content)) {
-                    for (const contentItem of outputItem.content) {
-                        if (contentItem.type === 'output_text' && contentItem.text) {
-                            return contentItem.text;
-                        }
+
+        // Initialize chat session with existing history
+        const chat = model.startChat({
+            history: history,
+        });
+
+        let result;
+
+        if (image && image.data) {
+            // Remove the data URL prefix (e.g., "data:image/jpeg;base64,") if it exists
+            const base64Data = image.data.replace(/^data:image\/\w+;base64,/, "");
+            
+            // For multimodal (Text + Image) in a chat session
+            const messagePayload = [
+                {
+                    inlineData: {
+                        data: base64Data,
+                        mimeType: image.mimeType || "image/jpeg"
                     }
-                }
-            }
+                },
+                { text: userInput || "What is in this image?" }
+            ];
+
+            result = await chat.sendMessage(messagePayload);
+        } else {
+            // Standard text-only message
+            result = await chat.sendMessage(userInput || "Hello!");
         }
 
-        // Fallback to other common places
-        if (response.data.output && typeof response.data.output === 'string') {
-            return response.data.output;
-        } else if (response.data.choices && response.data.choices[0] && response.data.choices[0].message) {
-            return response.data.choices[0].message.content;
-        } else if (response.data.response) {
-            return response.data.response;
-        }
-        
-        return "I'm sorry, I couldn't process that request.";
+        const response = await result.response;
+        return response.text();
+
     } catch (error) {
-        console.error('AI API Error:', error.response ? JSON.stringify(error.response.data) : error.message);
-        
-        if (error.response && error.response.status === 401) {
-            return "Error: Invalid API Key. Please check your .env file.";
-        } else if (error.response && error.response.status === 404) {
-            return `Error: The model 'gpt-5-nano' or endpoint was not found. Please verify the API details.`;
+        const status = error.status || (error.message?.includes('503') ? 503 : error.message?.includes('429') ? 429 : null);
+
+        // Retry logic for busy server or rate limits
+        if ((status === 503 || status === 429) && retryCount < 1) {
+            console.log(`⚠️ AI Busy (${status}). Retrying in 2 seconds...`);
+            await new Promise(res => setTimeout(res, 2000));
+            return getAiResponse(userInput, history, image, retryCount + 1);
         }
-        
-        return "Sorry, I'm having trouble connecting to my brain right now.";
+
+        console.error('AI API Error:', error.message);
+        return "I'm having trouble processing that right now. Try again in a second!";
     }
 }
 

@@ -55,7 +55,9 @@ module.exports = (io, socket) => {
                     user.socketId = socket.id;
                     user.online = true;
                     await user.save();
-                    
+
+                    socket.username = trimmedUsername; // Store username in socket object
+
                     // Update memory cache
                     users[trimmedUsername] = {
                         username: user.username,
@@ -85,7 +87,7 @@ module.exports = (io, socket) => {
             if (user) {
                 user.online = false;
                 await user.save();
-                
+
                 // Update memory cache
                 if (users[user.username]) {
                     users[user.username].online = false;
@@ -103,7 +105,7 @@ module.exports = (io, socket) => {
 
     socket.on('delete user', async (targetUsername) => {
         console.log('delete this user ', targetUsername);
-        
+
         try {
             const requestingUser = await User.findOne({ socketId: socket.id });
             if (!requestingUser || requestingUser.username !== 'Alpha') {
@@ -118,9 +120,9 @@ module.exports = (io, socket) => {
             const targetUser = await User.findOne({ username: targetUsername });
             if (targetUser) {
                 const targetSocketId = targetUser.socketId;
-                
+
                 await User.deleteOne({ username: targetUsername });
-                
+
                 // Update memory cache
                 delete users[targetUsername];
 
@@ -159,7 +161,7 @@ module.exports = (io, socket) => {
 
             user.password = newPassword || '';
             await user.save();
-            
+
             // Update memory cache
             if (users[user.username]) {
                 users[user.username].password = user.password;
@@ -179,7 +181,7 @@ module.exports = (io, socket) => {
             return;
         }
         const trimmedUsername = username.trim();
-        
+
         try {
             const existingUser = await User.findOne({ username: trimmedUsername });
             if (existingUser) {
@@ -260,7 +262,7 @@ module.exports = (io, socket) => {
 
                 socket.emit('user approved', targetUsername);
                 io.emit('user list', getApprovedUsers());
-                
+
                 // If user is online, notify them (though they wouldn't be able to log in anyway)
                 if (user.socketId) {
                     const targetSocket = io.sockets.sockets.get(user.socketId);
@@ -293,13 +295,13 @@ module.exports = (io, socket) => {
 
                 const targetSocketId = user.socketId;
                 await User.deleteOne({ username: targetUsername });
-                
+
                 // Update memory cache
                 delete users[targetUsername];
 
                 socket.emit('user rejected', targetUsername);
                 // No need to emit user list since they were never in it
-                
+
                 // If user is online, notify them and disconnect
                 if (targetSocketId) {
                     const targetSocket = io.sockets.sockets.get(targetSocketId);

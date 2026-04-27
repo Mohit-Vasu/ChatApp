@@ -32,6 +32,7 @@ const groupSchema = new mongoose.Schema({
     creator: { type: String, required: true },
     members: [{ type: String }],
     messages: [{
+        messageId: String,
         text: String,
         username: String,
         from: String,
@@ -46,6 +47,15 @@ const groupSchema = new mongoose.Schema({
         replyTo: {
             text: String,
             from: String
+        },
+        reactions: {
+            type: Map,
+            of: [{
+                username: String,
+                emoji: String,
+                timestamp: String
+            }],
+            default: {}
         }
     }]
 });
@@ -53,6 +63,7 @@ const groupSchema = new mongoose.Schema({
 const privateChatSchema = new mongoose.Schema({
     roomKey: { type: String, required: true, unique: true },
     messages: [{
+        messageId: String,
         text: String,
         username: String,
         from: String,
@@ -66,13 +77,39 @@ const privateChatSchema = new mongoose.Schema({
         replyTo: {
             text: String,
             from: String
+        },
+        reactions: {
+            type: Map,
+            of: [{
+                username: String,
+                emoji: String,
+                timestamp: String
+            }],
+            default: {}
         }
+    }]
+});
+
+const aiChatSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    chatId: { type: String, required: true }, // unique for this user session
+    title: { type: String, default: 'New AI Chat' },
+    createdAt: { type: Date, default: Date.now },
+    messages: [{
+        role: { type: String, enum: ['user', 'model'], required: true },
+        text: String,
+        image: {
+            data: String,
+            mimeType: String
+        },
+        time: { type: String, default: () => new Date().toLocaleTimeString() }
     }]
 });
 
 const User = mongoose.model('User', userSchema);
 const Group = mongoose.model('Group', groupSchema);
 const PrivateChat = mongoose.model('PrivateChat', privateChatSchema);
+const AIChat = mongoose.model('AIChat', aiChatSchema);
 
 const pendingDeletionSchema = new mongoose.Schema(
     {
@@ -91,4 +128,4 @@ pendingDeletionSchema.index({ deleted: 1, deleteAt: 1 });
 
 const PendingDeletion = mongoose.model('PendingDeletion', pendingDeletionSchema);
 
-module.exports = { connectDB, User, Group, PrivateChat, PendingDeletion };
+module.exports = { connectDB, User, Group, PrivateChat, PendingDeletion, AIChat };
