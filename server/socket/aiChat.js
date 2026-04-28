@@ -1,6 +1,37 @@
 const { getAiResponse } = require('../ai');
 const { AIChat } = require('../db');
 
+function toGeminiHistory(messages = []) {
+    return messages.reduce((acc, message) => {
+        const parts = [];
+        const text = typeof message.text === 'string' ? message.text.trim() : '';
+
+        if (message.image?.data) {
+            parts.push({
+                inlineData: {
+                    data: message.image.data.replace(/^data:image\/\w+;base64,/, ''),
+                    mimeType: message.image.mimeType || 'image/jpeg'
+                }
+            });
+        }
+
+        if (text) {
+            parts.push({ text });
+        }
+
+        if (parts.length === 0) {
+            return acc;
+        }
+
+        acc.push({
+            role: message.role,
+            parts
+        });
+
+        return acc;
+    }, []);
+}
+
 module.exports = (io, socket) => {
     // Start a new AI chat session
     socket.on('new ai chat', async () => {
@@ -100,15 +131,12 @@ module.exports = (io, socket) => {
             }
 
             // Format history for Gemini API
-            const history = chat.messages.map(m => ({
-                role: m.role,
-                parts: [{ text: m.text }]
-            }));
+            const history = toGeminiHistory(chat.messages);
 
             // Save user message to DB
             chat.messages.push({
                 role: 'user',
-                text: text,
+                text: text || '',
                 image: image ? { data: image.data, mimeType: image.mimeType } : undefined,
                 time: new Date().toLocaleTimeString()
             });
