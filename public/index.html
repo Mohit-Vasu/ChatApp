@@ -5,44 +5,56 @@
     <title>Chat App</title>
     <link rel="icon" href="fevicon/android-chrome-512x512-removebg-preview.png">
     <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
 
     <div class="app" style="display: none;">
-
-        <!-- Sidebar -->
         <div class="sidebar">
-            <h2 style="display: flex; align-items: center;"><img
-                    src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp"
-                    style="width: 45px; height: 40px; margin-right: 5px;"> ChatApp</h2>
+            <div class="sidebar-brand">
+                <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp">
+                <div class="sidebar-brand-copy">
+                    <span class="sidebar-kicker">Realtime Workspace</span>
+                    <h2>ChatApp</h2>
+                </div>
+            </div>
 
-            <h4>👥 Users</h4>
-            <div id="users"></div>
+            <div class="sidebar-section">
+                <h4>People</h4>
+                <div id="users"></div>
+            </div>
 
-            <h4>👨‍👩‍👧 Groups</h4>
-            <div id="groups"></div>
+            <div class="sidebar-section">
+                <h4>Groups</h4>
+                <div id="groups"></div>
+            </div>
 
             <div id="adminPanel" style="display: none;">
-                <h4>🛡️ Admin Panel</h4>
+                <h4>Admin Panel</h4>
                 <div id="pendingUsers" class="pending-users-list"></div>
             </div>
 
             <button onclick="createGroup()" class="sidebar-btn create-group-btn">
-                <span>+</span> Create New Group
+                <span>+</span>
+                <span>New Group</span>
             </button>
         </div>
 
-        <!-- Chat -->
         <div class="chat">
-            <!-- Top Navigation / User Profile Header -->
             <div class="top-nav">
+                <div class="top-nav-copy">
+                    <span class="top-nav-kicker">Realtime Messaging</span>
+                    <span class="top-nav-title">Private chats, team rooms, files, and AI support in one place</span>
+                </div>
+
                 <button id="aiToggleBtn" class="ai-toggle-btn" title="Chat with AI">
                     <span class="ai-icon">
-                        <img src="/fevicon/github-copilot-icon.webp" alt="AI" style="width: 20px; height: 20px; border-radius: 4px; vertical-align: middle; margin-right: 5px; filter: brightness(0) invert(1);">
+                        <img src="/fevicon/github-copilot-icon.webp" alt="AI">
                     </span>
                     AI Assistant
                 </button>
+
                 <div class="user-profile" id="userProfile">
                     <div class="user-info-toggle">
                         <div class="user-avatar" id="userAvatar">U</div>
@@ -58,32 +70,37 @@
                             </div>
                         </div>
                         <div class="dropdown-item" onclick="changePassword()">
-                            <span class="item-icon">🔑</span>
+                            <span class="item-icon">Key</span>
                             <span class="item-label">Change Password</span>
                         </div>
                         <div class="dropdown-item logout" onclick="logout()">
-                            <span class="item-icon">🚪</span>
+                            <span class="item-icon">Exit</span>
                             <span class="item-label">Logout</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Welcome Screen -->
             <div id="welcomeScreen" class="welcome-screen">
                 <div class="welcome-content">
                     <div class="welcome-icon">
                         <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="ChatApp">
                     </div>
-                    <h2>Welcome to ChatApp</h2>
-                    <p>Select a friend or join a group to start messaging instantly.</p>
+                    <h2>Calm, fast messaging for your whole team</h2>
+                    <p>Pick a person, open a group, or slide over to the AI panel to start working.</p>
+                    <div class="welcome-pills">
+                        <span>Private chat</span>
+                        <span>Groups</span>
+                        <span>File sharing</span>
+                        <span>AI assistant</span>
+                    </div>
                     <div class="live-status-badge">
-                        <span class="pulse"></span> Live Connection Active
+                        <span class="pulse"></span>
+                        <span>Live connection active</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Chat Content (Hidden by default) -->
             <div id="chatContent" style="display: none; flex-direction: column; flex: 1;">
                 <div class="chat-header">
                     <div class="chat-header-info">
@@ -101,60 +118,59 @@
                         <span class="reply-user">Replying to User</span>
                         <p class="reply-text">Original message...</p>
                     </div>
-                    <button onclick="cancelReply()" class="cancel-reply">✕</button>
+                    <button onclick="cancelReply()" class="cancel-reply">×</button>
                 </div>
 
                 <div class="input-area">
-                <input type="file" id="fileInput" style="display: none;" multiple />
-                <button onclick="document.getElementById('fileInput').click()" class="attach-btn" title="Attach File">📎</button>
-                <textarea id="msg" rows="1" placeholder="Type message..."></textarea>
-                <button onclick="send()">➤</button>
-            </div>
+                    <input type="file" id="fileInput" style="display: none;" multiple>
+                    <button onclick="document.getElementById('fileInput').click()" class="attach-btn" title="Attach File">+</button>
+                    <textarea id="msg" rows="1" placeholder="Write a message"></textarea>
+                    <button onclick="send()" class="send-btn" title="Send">→</button>
+                </div>
             </div>
         </div>
 
-        <!-- AI Sidebar -->
         <div id="aiSidebar" class="ai-sidebar">
             <div class="ai-sidebar-header">
                 <h3>
                     <span class="ai-icon">
-                        <img src="/fevicon/github-copilot-icon.webp" alt="AI" style="width: 24px; height: 24px; border-radius: 4px;">
+                        <img src="/fevicon/github-copilot-icon.webp" alt="AI">
                     </span>
                     AI Assistant
                 </h3>
                 <div class="ai-header-actions">
-                    <button id="newAiChatBtn" class="new-chat-btn" title="New Chat">＋</button>
-                    <button id="closeAiSidebar" class="close-btn">&times;</button>
+                    <button id="newAiChatBtn" class="new-chat-btn" title="New Chat">+</button>
+                    <button id="closeAiSidebar" class="close-btn">×</button>
                 </div>
             </div>
+
             <div id="aiMessages" class="ai-messages">
                 <div class="message received ai-message">
                     <span class="message-header">AI Assistant</span>
-                    <div class="message-content">Hello! How can I help you today?</div>
+                    <div class="message-content">Hello! Ask me about code, writing, ideas, or the image you want analyzed.</div>
                 </div>
             </div>
-            <!-- Image preview area for AI uploads -->
+
             <div id="aiImagePreview" class="ai-image-preview" style="display: none;">
                 <img id="aiPreviewImg" src="" alt="Preview">
-                <button id="aiRemoveImg" class="remove-img-btn">&times;</button>
+                <button id="aiRemoveImg" class="remove-img-btn">×</button>
             </div>
+
             <div class="ai-input-area">
                 <input type="file" id="aiImageInput" accept="image/*" style="display: none;">
-                <button id="aiUploadBtn" class="ai-upload-btn" title="Upload image">📷</button>
+                <button id="aiUploadBtn" class="ai-upload-btn" title="Upload image">+</button>
                 <textarea id="aiMsgInput" placeholder="Ask AI anything..."></textarea>
-                <button id="sendAiBtn">➤</button>
+                <button id="sendAiBtn" title="Send">→</button>
             </div>
         </div>
-
     </div>
 
-    <!-- Attractive Login Page -->
     <div id="loginPage" class="login-page">
         <div class="login-container">
             <div class="login-header">
                 <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
                 <h1>Welcome to ChatApp</h1>
-                <p>Connect with friends and groups instantly</p>
+                <p>Private chat, team rooms, file sharing, and AI support in a cleaner workspace.</p>
             </div>
             <form id="loginForm" class="login-form">
                 <div class="form-group">
@@ -167,20 +183,19 @@
                 </div>
                 <button type="submit" class="login-btn">Login / Join</button>
             </form>
-            <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
+            <div class="auth-switch">
                 Don't have an account?
-                <a href="#" id="openRegister" style="color:#128c7e;text-decoration:none;font-weight:600">Register</a>
+                <a href="#" id="openRegister">Register</a>
             </div>
         </div>
     </div>
 
-    <!-- Register Page -->
     <div id="registerPage" class="login-page" style="display:none">
         <div class="login-container">
             <div class="login-header">
                 <img src="fevicon/android-chrome-512x512-removebg-preview.png" alt="Logo">
                 <h1>Create your account</h1>
-                <p>Please enter your details to register</p>
+                <p>Set up your account and jump straight into the workspace.</p>
             </div>
             <form id="registerForm" class="login-form">
                 <div class="form-group">
@@ -197,35 +212,32 @@
                 </div>
                 <button type="submit" class="login-btn">Register</button>
             </form>
-            <div style="margin-top:12px;text-align:center;font-size:14px;color:#555">
+            <div class="auth-switch">
                 Already have an account?
-                <a href="#" id="openLogin" style="color:#128c7e;text-decoration:none;font-weight:600">Login</a>
+                <a href="#" id="openLogin">Login</a>
             </div>
         </div>
     </div>
 
     <div id="notification-container"></div>
 
-    <!-- Emoji Picker Modal -->
     <div id="emojiPickerModal" class="emoji-picker-modal">
         <div class="emoji-picker-content">
             <div class="emoji-picker-header">
                 <span>React with emoji</span>
-                <button onclick="closeEmojiPicker()" class="emoji-picker-close">&times;</button>
+                <button onclick="closeEmojiPicker()" class="emoji-picker-close">×</button>
             </div>
             <div class="emoji-grid" id="emojiGrid"></div>
         </div>
     </div>
 
-    <!-- Member Add Modal -->
     <div id="memberModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">Add Member</h3>
             <div id="selectedMembers" class="selected-members"></div>
             <div class="form-group">
                 <label for="modalInput" id="modalLabel">Username:</label>
-                <input type="text" id="modalInput" list="user-list" autocomplete="off"
-                    placeholder="Type username and press enter">
+                <input type="text" id="modalInput" list="user-list" autocomplete="off" placeholder="Type username and press enter">
                 <datalist id="user-list"></datalist>
             </div>
             <div class="modal-buttons">
